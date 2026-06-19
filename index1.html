@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1B1F2A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ميزانيتي">
+<title>ميزانيتي</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #F4EEE2; --surface: #FFFFFF; --surface-2: #FAF5EA;
+  --ink: #1B1F2A; --ink-soft: #4D5562; --ink-mute: #8A8F9C;
+  --line: #E5DDCB; --line-strong: #D5CAB2;
+  --accent: #2D5F50; --accent-soft: #DCE7E0;
+  --warn: #B07523; --warn-soft: #F5E5C8;
+  --danger: #B23E2C; --danger-soft: #F4D8D0;
+  --ok: #2E7A5C;
+  --ai: #5B3A8C; --ai-soft: #E8DDF2;
+  --sync: #1F6FB8; --sync-soft: #D8E8F5;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; background: var(--bg); font-family: 'Tajawal', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: var(--ink); min-height: 100vh; }
+.num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; direction: ltr; display: inline-block; }
+.display { font-weight: 800; letter-spacing: -0.01em; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+input, textarea, select { font-family: inherit; }
+input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="number"] { -moz-appearance: textfield; }
+
+.app { max-width: 480px; margin: 0 auto; padding-bottom: 96px; }
+.row { display: flex; align-items: center; gap: 12px; }
+.flex-1 { flex: 1; min-width: 0; }
+.gap-2 { gap: 8px; }
+.mx-5 { margin-left: 20px; margin-right: 20px; }
+.mt-2 { margin-top: 8px; }
+.mt-3 { margin-top: 12px; }
+.mt-4 { margin-top: 16px; }
+.mb-2 { margin-bottom: 8px; }
+.text-center { text-align: center; }
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hide-scroll::-webkit-scrollbar { display: none; }
+.hide-scroll { scrollbar-width: none; }
+.space-y-2 > * + * { margin-top: 8px; }
+.space-y-3 > * + * { margin-top: 12px; }
+.space-y-4 > * + * { margin-top: 16px; }
+.space-y-5 > * + * { margin-top: 20px; }
+
+.app-header { padding: 24px 20px 12px; display: flex; align-items: center; justify-content: space-between; }
+.app-header .title-block { display: flex; flex-direction: column; }
+.app-header .label { font-size: 11px; color: var(--ink-mute); }
+.app-header h1 { font-size: 20px; font-weight: 800; margin: 2px 0 0; letter-spacing: -0.01em; }
+
+.icon-btn { width: 36px; height: 36px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: var(--ink-soft); font-size: 16px; transition: background 0.15s; }
+.icon-btn:hover { background: rgba(0,0,0,0.05); }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 20px; }
+.card-tight { padding: 14px; }
+.card-dark { background: var(--ink); color: white; }
+.card-accent { background: var(--accent); color: white; }
+.card-ai { background: var(--ai); color: white; }
+.card-warn { background: var(--warn-soft); }
+.card-danger { background: var(--danger-soft); }
+.card-ok { background: var(--accent-soft); }
+
+.hero-amount { font-size: 48px; font-weight: 800; margin-top: 12px; letter-spacing: -0.02em; }
+.hero-sub { font-size: 13px; opacity: 0.7; margin-top: 4px; }
+.hero-label { font-size: 11px; opacity: 0.7; }
+
+.bar-track { height: 6px; border-radius: 999px; overflow: hidden; background: var(--line); }
+.bar-track.dark { background: rgba(255,255,255,0.15); }
+.bar-fill { height: 100%; border-radius: 999px; transition: width 0.3s; }
+
+.stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stat-box { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
+.stat-label { font-size: 10px; color: var(--ink-mute); }
+.stat-value { font-size: 15px; font-weight: 800; margin-top: 2px; }
+.stat-ok { color: var(--ok); }
+.stat-warn { color: var(--warn); }
+.stat-danger { color: var(--danger); }
+
+.status-card { border-radius: 16px; padding: 16px; display: flex; gap: 12px; align-items: flex-start; }
+.status-icon { font-size: 20px; }
+.status-title { font-weight: 800; font-size: 14px; }
+.status-msg { font-size: 12px; margin-top: 4px; color: var(--ink-soft); line-height: 1.5; }
+
+.btn { padding: 10px 16px; border-radius: 10px; font-weight: 700; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: opacity 0.15s, transform 0.1s; }
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-primary { background: var(--accent); color: white; }
+.btn-ai { background: var(--ai); color: white; }
+.btn-sync { background: var(--sync); color: white; }
+.btn-dark { background: var(--ink); color: white; }
+.btn-soft { background: var(--surface-2); color: var(--ink); border: 1px solid var(--line); }
+.btn-block { width: 100%; padding: 12px; }
+
+.input { width: 100%; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line); font-size: 14px; color: var(--ink); outline: none; }
+.input:focus { border-color: var(--accent); }
+.label-small { font-size: 11px; color: var(--ink-mute); display: block; }
+.input-big { font-size: 32px; font-weight: 800; background: transparent; border: none; border-bottom: 2px solid var(--line-strong); padding: 6px 0; width: 100%; direction: ltr; text-align: left; outline: none; }
+.input-big:focus { border-bottom-color: var(--accent); }
+textarea.input { resize: vertical; min-height: 140px; }
+
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; max-width: 480px; margin: 0 auto; padding: 8px 12px 12px; background: linear-gradient(to top, var(--bg) 70%, transparent); z-index: 30; }
+.bottom-nav-inner { background: var(--ink); border-radius: 16px; display: flex; justify-content: space-around; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+.tab-btn { flex: 1; padding: 10px 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; color: white; opacity: 0.55; transition: opacity 0.15s; }
+.tab-btn.active { opacity: 1; }
+.tab-btn .ic { font-size: 18px; }
+.tab-btn .lbl { font-size: 10px; font-weight: 700; }
+
+.cat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.cat-btn { padding: 8px 4px; border-radius: 8px; background: var(--surface-2); border: 1.5px solid transparent; text-align: center; transition: background 0.15s, border-color 0.15s; }
+.cat-btn.active { background: var(--accent-soft); border-color: var(--accent); }
+.cat-btn .em { font-size: 18px; }
+.cat-btn .nm { font-size: 9px; margin-top: 2px; color: var(--ink-soft); line-height: 1.2; }
+
+.chip-row { display: flex; gap: 8px; padding: 0 20px 8px; overflow-x: auto; }
+.chip { padding: 6px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); color: var(--ink-soft); font-size: 11px; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
+.chip.active { background: var(--ink); color: white; border: none; }
+
+.list-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-top: 1px solid var(--line); width: 100%; text-align: right; }
+.list-item:first-child { border-top: none; }
+.list-item-em { font-size: 22px; }
+.list-item-title { font-size: 13px; font-weight: 700; }
+.list-item-sub { font-size: 11px; color: var(--ink-mute); margin-top: 2px; }
+.list-item-amount { font-size: 13px; font-weight: 700; }
+
+.pin-screen { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
+.pin-input { font-size: 28px; font-weight: 800; background: transparent; border: none; border-bottom: 2px solid var(--accent); text-align: center; letter-spacing: 0.3em; width: 160px; padding: 8px 0; outline: none; direction: ltr; }
+.pin-input.error { border-bottom-color: var(--danger); animation: shake 0.4s; }
+@keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+
+.chart-wrap { height: 180px; position: relative; }
+.chart-wrap-small { height: 160px; }
+.chart-wrap-tall { height: 200px; }
+
+.empty-state { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 40px 20px; text-align: center; }
+.empty-state .em { font-size: 32px; margin-bottom: 8px; }
+.empty-state .msg { font-size: 14px; color: var(--ink-mute); }
+.empty-state .sub { font-size: 11px; color: var(--ink-mute); margin-top: 4px; }
+
+.notice { background: var(--warn-soft); border-radius: 10px; padding: 12px; font-size: 11px; color: var(--ink-soft); line-height: 1.5; }
+.notice strong { color: var(--ink); }
+.hint { background: var(--surface-2); border-radius: 10px; padding: 10px; font-size: 12px; color: var(--ink-soft); line-height: 1.5; }
+.bar-pair { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+.bar-pair-label { display: flex; justify-content: space-between; font-size: 11px; opacity: 0.9; margin-bottom: 6px; }
+.hidden { display: none; }
+.file-hidden { position: absolute; opacity: 0; pointer-events: none; }
+
+.toggle-row { display: flex; justify-content: space-between; align-items: center; }
+.switch { position: relative; width: 44px; height: 24px; border-radius: 999px; background: var(--line-strong); transition: background 0.2s; flex-shrink: 0; }
+.switch.on-ai { background: var(--ai); }
+.switch.on-sync { background: var(--sync); }
+.switch::after { content: ''; position: absolute; top: 2px; right: 2px; width: 20px; height: 20px; border-radius: 50%; background: white; transition: transform 0.2s; }
+.switch.on-ai::after, .switch.on-sync::after { transform: translateX(-20px); }
+
+.ai-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; padding: 2px 6px; border-radius: 999px; background: var(--ai-soft); color: var(--ai); font-weight: 700; }
+
+.spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.sync-pill { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; padding: 4px 8px; border-radius: 999px; font-weight: 700; }
+.sync-pill-ok { background: var(--accent-soft); color: var(--ok); }
+.sync-pill-syncing { background: var(--sync-soft); color: var(--sync); }
+.sync-pill-pending { background: var(--surface-2); color: var(--ink-mute); }
+.sync-pill-error { background: var(--danger-soft); color: var(--danger); }
+.sync-pill-offline { background: var(--warn-soft); color: var(--warn); }
+
+.loading-screen { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 24px; }
+.big-spinner { width: 40px; height: 40px; border: 3px solid var(--line-strong); border-right-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════════════════════════════
+// الثوابت
+// ═══════════════════════════════════════════════════════════════════════
+const DEFAULT_CONFIG = {
+  monthlyBudget: 18000, savingsGoal: 2000, currency: 'ريال', resetDay: 1,
+  aiEnabled: false, aiApiKey: '',
+  syncEnabled: false, githubToken: '', githubOwner: '', githubRepo: '', githubPath: 'budget-data.json',
+};
+
+const CATEGORIES = [
+  { id: 'groceries',   name: 'سوبرماركت',  emoji: '🛒', color: '#2D5F50' },
+  { id: 'restaurants', name: 'مطاعم',       emoji: '🍽️', color: '#B07523' },
+  { id: 'delivery',    name: 'توصيل طعام',  emoji: '🛵', color: '#D4943B' },
+  { id: 'fuel',        name: 'بنزين',       emoji: '⛽', color: '#5C6B8A' },
+  { id: 'ride',        name: 'مواصلات',     emoji: '🚗', color: '#3A5A7A' },
+  { id: 'pharmacy',    name: 'صيدلية',     emoji: '💊', color: '#4A8B6F' },
+  { id: 'utilities',   name: 'فواتير',     emoji: '⚡', color: '#7A5C8A' },
+  { id: 'shopping',    name: 'تسوق',       emoji: '🛍️', color: '#B85FA0' },
+  { id: 'beauty',      name: 'تجميل',      emoji: '💄', color: '#C16B9D' },
+  { id: 'cash',        name: 'سحب نقدي',   emoji: '💵', color: '#6B6B6B' },
+  { id: 'transfers',   name: 'تحويلات',    emoji: '💸', color: '#8A6B4A' },
+  { id: 'other',       name: 'أخرى',       emoji: '📌', color: '#9B9B9B' },
+];
+
+const MERCHANT_RULES = {
+  groceries: ['CARREFOUR','DANUBE','LULU','HYPERPANDA','PANDA','BINDAWOOD','BIN DAWOOD','TAMIMI','OTHAIM','SPAR','NESTO','MARKET','SUPERMARKET','كارفور','دانوب','لولو','هايبر','بندة','العثيم','التميمي','بن داود'],
+  restaurants: ['MCDONALDS','STARBUCKS','KFC','ALBAIK','AL BAIK','SHAWARMER','KUDU','DOMINOS','PIZZA HUT','HERFY','PAUL','COSTA','TIM HORTONS','DUNKIN','BURGER','RESTAURANT','CAFE','COFFEE','ماكدونالدز','ستاربكس','البيك','كودو','هرفي','دومينوز','بيتزا'],
+  delivery: ['JAHEZ','HUNGERSTATION','HUNGER STATION','TALABAT','NOON FOOD','KEETA','TOYOU','NINJA','MRSOOL','CAREEM FOOD','جاهز','هنقرستيشن','طلبات','مرسول','نون فود'],
+  fuel: ['ALDREES','SADAFCO','SASCO','MUKAMALAH','WAFI','PETROL','FUEL','PETROMIN','الدريس','ساسكو','وقود'],
+  ride: ['UBER','CAREEM','BOLT','JEENY','أوبر','كريم'],
+  pharmacy: ['NAHDI','AL DAWAA','AL-DAWAA','PHARMACY','UNITED PHARM','صيدلية','النهدي','الدواء'],
+  utilities: ['STC','MOBILY','ZAIN','SEC','NWC','SAUDI ELECTRICITY','INTERNET','SADAD','اتصالات','موبايلي','زين','الكهرباء','المياه','سداد'],
+  shopping: ['NAMSHI','AMAZON','NOON','SHEIN','SEPHORA','IKEA','CENTREPOINT','ZARA','H&M','MAX','CITY MAX','HOME CENTRE','SACO','EXTRA','JARIR','نمشي','أمازون','نون','شي إن','ايكيا','زارا','جرير','اكسترا'],
+  beauty: ['BODY SHOP','BATH BODY','LOCCITANE','SALON','SPA','صالون','سبا'],
+  cash: ['ATM','CASH WITHDRAWAL','سحب نقدي','نقدي','صراف'],
+  transfers: ['TRANSFER','حوالة','تحويل'],
+};
+
+const MONTHS_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+const MONTHS_AR_SHORT = ['ينا','فبر','مار','أبر','ماي','يون','يول','أغس','سبت','أكت','نوف','ديس'];
+const DOWS_AR = ['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+
+// ═══════════════════════════════════════════════════════════════════════
+// أدوات
+// ═══════════════════════════════════════════════════════════════════════
+function esc(s) {
+  if (s == null) return '';
+  return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]);
+}
+const newId = () => Math.random().toString(36).slice(2, 10);
+const todayISO = () => new Date().toISOString().slice(0, 10);
+const fmt = (n, cur = 'ريال') => Math.round(n).toLocaleString('en-US') + ' ' + cur;
+const fmtNoCur = (n) => Math.round(n).toLocaleString('en-US');
+
+function cycleKey(resetDay, now) {
+  now = now || new Date(); resetDay = resetDay || 1;
+  const d = now.getDate();
+  if (d >= resetDay) return now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+  const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  return prev.getFullYear() + '-' + String(prev.getMonth() + 1).padStart(2, '0');
+}
+function monthLabel(key) {
+  const parts = key.split('-').map(Number);
+  return MONTHS_AR[parts[1] - 1] + ' ' + parts[0];
+}
+function txnsInCycle(txns, ckey, resetDay) {
+  const parts = ckey.split('-').map(Number);
+  const start = new Date(parts[0], parts[1] - 1, resetDay);
+  const end = new Date(parts[0], parts[1], resetDay - 1, 23, 59, 59);
+  return txns.filter(t => { const d = new Date(t.date + 'T12:00:00'); return d >= start && d <= end; });
+}
+function getCat(id) { for (let i = 0; i < CATEGORIES.length; i++) if (CATEGORIES[i].id === id) return CATEGORIES[i]; return CATEGORIES[CATEGORIES.length - 1]; }
+function hashPin(pin) { let h = 5381; for (let i = 0; i < pin.length; i++) h = ((h << 5) + h + pin.charCodeAt(i)) | 0; return String(h); }
+
+// ═══════════════════════════════════════════════════════════════════════
+// محلل الرسائل البنكية
+// ═══════════════════════════════════════════════════════════════════════
+function arabicNumsToEn(s) { return s.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d).toString()); }
+
+function parseSingleSMS(rawText) {
+  if (!rawText || rawText.trim().length < 5) return null;
+  const text = arabicNumsToEn(rawText.replace(/\u200f|\u200e/g, '')).trim();
+  const isWithdrawal = /(?:withdraw|cash|سحب نقدي|ATM)/i.test(text);
+  const isIncoming = /(?:credited|received|deposit|incoming|واردة|إيداع|تم إيداع|تم استلام|راتب|salary)/i.test(text) && !/خصم|debit|purchase|شراء/i.test(text);
+  const hasPurchaseKw = /(?:purchase|شراء|POS|payment|دفع)/i.test(text);
+  const hasAmount = /\d+(?:\.\d+)?\s*(?:SAR|ر\.?س|SR|ريال)/i.test(text);
+  if (!hasPurchaseKw && !isWithdrawal && !isIncoming && !hasAmount) return null;
+
+  let amount = 0;
+  const amountPatterns = [
+    /(?:بمبلغ|بقيمة|amount|مبلغ)[\s:]*(\d+(?:[,،]\d{3})*(?:\.\d+)?)\s*(?:SAR|SR|ر\.?س|ريال)/i,
+    /(\d+(?:[,،]\d{3})*(?:\.\d+)?)\s*(?:SAR|SR|ر\.?س|ريال)/i,
+    /(?:SAR|SR|ر\.?س|ريال)[\s:]*(\d+(?:[,،]\d{3})*(?:\.\d+)?)/i,
+  ];
+  for (let i = 0; i < amountPatterns.length; i++) {
+    const m = text.match(amountPatterns[i]);
+    if (m) { amount = parseFloat(m[1].replace(/[,،]/g, '')); if (!isNaN(amount) && amount > 0) break; }
+  }
+  if (!amount || amount <= 0) return null;
+
+  let merchant = '';
+  const merchantPatterns = [
+    /(?:من|from|at|في محل|لدى)[\s:]+([A-Za-z\u0600-\u06FF][A-Za-z0-9\u0600-\u06FF\s&'\.\-]+?)(?=\s*(?:\n|في\s|on\s|بتاريخ|card|بطاقة|الرصيد|balance|$))/i,
+    /(?:merchant|store)[\s:]+([A-Za-z][A-Za-z0-9\s&'\.\-]+)/i,
+  ];
+  for (let i = 0; i < merchantPatterns.length; i++) {
+    const m = text.match(merchantPatterns[i]);
+    if (m && m[1]) { merchant = m[1].trim().replace(/\s+/g, ' ').slice(0, 60); break; }
+  }
+  if (!merchant && isWithdrawal) merchant = 'سحب نقدي';
+  if (!merchant && isIncoming) merchant = 'إيداع';
+  if (!merchant) merchant = 'غير معروف';
+
+  let date = todayISO();
+  const datePatterns = [/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/, /(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/];
+  for (let i = 0; i < datePatterns.length; i++) {
+    const m = text.match(datePatterns[i]);
+    if (m) {
+      let y, mo, d;
+      if (m[1].length === 4) { y = +m[1]; mo = +m[2]; d = +m[3]; }
+      else { d = +m[1]; mo = +m[2]; y = +m[3]; if (y < 100) y += 2000; }
+      if (y > 2000 && y < 2100 && mo >= 1 && mo <= 12 && d >= 1 && d <= 31) {
+        date = y + '-' + String(mo).padStart(2,'0') + '-' + String(d).padStart(2,'0'); break;
+      }
+    }
+  }
+
+  const category = categorizeByMerchant(merchant, isWithdrawal, isIncoming);
+  return { amount, merchant, date, category, type: isIncoming ? 'income' : (isWithdrawal ? 'withdrawal' : 'purchase'), raw: rawText.trim().slice(0, 500) };
+}
+
+function categorizeByMerchant(merchant, isWithdrawal, isIncoming) {
+  if (isIncoming) return 'transfers';
+  if (isWithdrawal) return 'cash';
+  const upper = merchant.toUpperCase();
+  if (state.merchantRules[upper]) return state.merchantRules[upper];
+  const cats = Object.keys(MERCHANT_RULES);
+  for (let i = 0; i < cats.length; i++) {
+    const kws = MERCHANT_RULES[cats[i]];
+    for (let j = 0; j < kws.length; j++) {
+      if (upper.indexOf(kws[j].toUpperCase()) !== -1) return cats[i];
+    }
+  }
+  return 'other';
+}
+
+function parseMultipleSMS(text) {
+  const parts = text.split(/\n\s*\n+|\n-{3,}\n|(?=(?:شراء\/POS|POS Purchase|عملية شراء|تنبيه|Purchase|تم خصم|دفع|سحب نقدي))/gi).map(s => s.trim()).filter(s => s.length > 10);
+  if (parts.length === 0) { const single = parseSingleSMS(text); return single ? [single] : []; }
+  const results = [];
+  for (let i = 0; i < parts.length; i++) { const r = parseSingleSMS(parts[i]); if (r) results.push(r); }
+  return results;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// تصنيف الذكاء الاصطناعي
+// ═══════════════════════════════════════════════════════════════════════
+async function classifyWithAI(merchant) {
+  if (!state.config.aiApiKey) throw new Error('لا يوجد مفتاح API');
+  const validIds = CATEGORIES.map(c => c.id).join(', ');
+  const prompt = `صنّف هذا التاجر السعودي إلى إحدى الفئات التالية فقط (أعد id الفئة بكلمة واحدة):\n- groceries (سوبرماركت/بقالة/هايبر)\n- restaurants (مطاعم/كافيهات)\n- delivery (تطبيقات توصيل طعام)\n- fuel (بنزين/محطات وقود)\n- ride (مواصلات/تاكسي)\n- pharmacy (صيدلية)\n- utilities (فواتير/اتصالات/كهرباء)\n- shopping (تسوق ملابس/إلكترونيات/منزل)\n- beauty (تجميل/سبا/صالون)\n- cash (سحب نقدي)\n- transfers (تحويلات/إيداع)\n- other (لا يدخل في أي فئة أعلاه)\n\nالتاجر: ${merchant}\n\nأجب بكلمة واحدة فقط هي id الفئة من القائمة (${validIds}).`;
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-api-key': state.config.aiApiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+    body: JSON.stringify({ model: 'claude-haiku-4-5', max_tokens: 30, messages: [{ role: 'user', content: prompt }] }),
+  });
+  if (!response.ok) throw new Error('فشل الاتصال: ' + response.status);
+  const data = await response.json();
+  const txt = (data.content[0].text || '').trim().toLowerCase();
+  for (let i = 0; i < CATEGORIES.length; i++) {
+    if (txt.indexOf(CATEGORIES[i].id) !== -1) return CATEGORIES[i].id;
+  }
+  return 'other';
+}
+
+async function classifyAllUnknown() {
+  const unknowns = state.parsedSMS.map((t, i) => ({ t, i })).filter(x => x.t.category === 'other');
+  if (unknowns.length === 0) return;
+  state.aiClassifying = true; render();
+  try {
+    for (let k = 0; k < unknowns.length; k++) {
+      const { t, i } = unknowns[k];
+      try {
+        const cat = await classifyWithAI(t.merchant);
+        state.merchantRules[t.merchant.toUpperCase()] = cat;
+        const updated = state.parsedSMS.slice();
+        updated[i] = Object.assign({}, updated[i], { category: cat });
+        state.parsedSMS = updated;
+      } catch (err) {}
+    }
+    saveAndSync();
+  } finally {
+    state.aiClassifying = false; render();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// مزامنة GitHub
+// ═══════════════════════════════════════════════════════════════════════
+function utf8ToBase64(str) { return btoa(unescape(encodeURIComponent(str))); }
+function base64ToUtf8(b64) { return decodeURIComponent(escape(atob(b64.replace(/\s/g, '')))); }
+
+async function ghLoad() {
+  const c = state.config;
+  if (!c.syncEnabled || !c.githubToken || !c.githubOwner || !c.githubRepo) return null;
+  const url = `https://api.github.com/repos/${c.githubOwner}/${c.githubRepo}/contents/${c.githubPath || 'budget-data.json'}`;
+  const res = await fetch(url, {
+    headers: { 'Authorization': `Bearer ${c.githubToken}`, 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' },
+  });
+  if (res.status === 404) return { data: null, sha: null };
+  if (res.status === 401) throw new Error('مفتاح غير صحيح أو منتهي');
+  if (res.status === 403) throw new Error('المفتاح ليس له صلاحية كافية');
+  if (!res.ok) throw new Error('فشل التحميل (' + res.status + ')');
+  const json = await res.json();
+  const decoded = base64ToUtf8(json.content);
+  return { data: JSON.parse(decoded), sha: json.sha };
+}
+
+async function ghSave(data, prevSha) {
+  const c = state.config;
+  if (!c.syncEnabled || !c.githubToken || !c.githubOwner || !c.githubRepo) return null;
+  const url = `https://api.github.com/repos/${c.githubOwner}/${c.githubRepo}/contents/${c.githubPath || 'budget-data.json'}`;
+  const content = utf8ToBase64(JSON.stringify(data, null, 2));
+  const body = { message: 'تحديث بيانات الميزانية ' + new Date().toLocaleString('en-US'), content };
+  if (prevSha) body.sha = prevSha;
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: { 'Authorization': `Bearer ${c.githubToken}`, 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (res.status === 409 || res.status === 422) {
+    // SHA mismatch — file changed remotely. Re-fetch and retry.
+    const fresh = await ghLoad();
+    if (fresh && fresh.sha) {
+      body.sha = fresh.sha;
+      const retry = await fetch(url, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${c.githubToken}`, 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!retry.ok) throw new Error('فشل الحفظ بعد إعادة المحاولة');
+      const j = await retry.json();
+      return j.content.sha;
+    }
+  }
+  if (!res.ok) throw new Error('فشل الحفظ (' + res.status + ')');
+  const j = await res.json();
+  return j.content.sha;
+}
+
+let syncDebounceTimer = null;
+let lastSha = null;
+let syncInFlight = false;
+
+function scheduleSync() {
+  if (!state.config.syncEnabled || !state.config.githubToken) return;
+  if (syncDebounceTimer) clearTimeout(syncDebounceTimer);
+  setSyncStatus('pending');
+  syncDebounceTimer = setTimeout(performSync, 1500);
+}
+
+async function performSync() {
+  if (syncInFlight) { syncDebounceTimer = setTimeout(performSync, 1500); return; }
+  if (!state.config.syncEnabled || !state.config.githubToken) return;
+  syncInFlight = true;
+  setSyncStatus('syncing');
+  try {
+    const data = { config: state.config, txns: state.txns, merchantRules: state.merchantRules, lastModified: new Date().toISOString(), version: 1 };
+    const newSha = await ghSave(data, lastSha);
+    if (newSha) lastSha = newSha;
+    setSyncStatus('synced');
+  } catch (err) {
+    setSyncStatus('error', err.message);
+  } finally {
+    syncInFlight = false;
+  }
+}
+
+function setSyncStatus(status, errMsg) {
+  state.syncStatus = status;
+  state.syncError = errMsg || '';
+  const els = document.querySelectorAll('[data-sync-indicator]');
+  for (let i = 0; i < els.length; i++) els[i].innerHTML = syncIndicatorHTML();
+}
+
+function syncIndicatorHTML() {
+  if (!state.config.syncEnabled) return '';
+  switch (state.syncStatus) {
+    case 'synced':  return '<span class="sync-pill sync-pill-ok">☁️ ✓</span>';
+    case 'syncing': return '<span class="sync-pill sync-pill-syncing"><span class="spinner" style="width:8px;height:8px;border-width:1.5px;"></span> مزامنة</span>';
+    case 'pending': return '<span class="sync-pill sync-pill-pending">☁️ ⏱</span>';
+    case 'error':   return '<span class="sync-pill sync-pill-error" title="' + esc(state.syncError) + '">☁️ ⚠</span>';
+    case 'offline': return '<span class="sync-pill sync-pill-offline">☁️ ✕</span>';
+    default: return '';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// الحالة والتخزين
+// ═══════════════════════════════════════════════════════════════════════
+const state = {
+  config: DEFAULT_CONFIG, txns: [], merchantRules: {},
+  pinHash: null, unlocked: true,
+  tab: 'dashboard', view: null,
+  editingTxn: null, editingTxnOriginal: null,
+  parsedSMS: [], parseError: '', filterCat: 'all',
+  pinAttemptError: false, aiClassifying: false,
+  initialLoading: false, loadError: '',
+  syncStatus: '', syncError: '',
+};
+let charts = [];
+
+function loadLocal() {
+  try { const cfg = localStorage.getItem('cfg'); state.config = cfg ? Object.assign({}, DEFAULT_CONFIG, JSON.parse(cfg)) : DEFAULT_CONFIG; } catch (e) { state.config = DEFAULT_CONFIG; }
+  try { const txns = localStorage.getItem('txns'); state.txns = txns ? JSON.parse(txns) : []; } catch (e) { state.txns = []; }
+  try { const rules = localStorage.getItem('merchant_rules'); state.merchantRules = rules ? JSON.parse(rules) : {}; } catch (e) { state.merchantRules = {}; }
+  state.pinHash = localStorage.getItem('pin_hash');
+  state.unlocked = !state.pinHash;
+  lastSha = localStorage.getItem('last_sha');
+}
+
+function saveLocal() {
+  try {
+    localStorage.setItem('cfg', JSON.stringify(state.config));
+    localStorage.setItem('txns', JSON.stringify(state.txns));
+    localStorage.setItem('merchant_rules', JSON.stringify(state.merchantRules));
+    if (lastSha) localStorage.setItem('last_sha', lastSha);
+  } catch (e) {}
+}
+
+function saveAndSync() {
+  saveLocal();
+  scheduleSync();
+}
+
+function setState(patch) { Object.assign(state, patch); render(); }
+
+async function initialLoadFromCloud() {
+  loadLocal();
+  if (!state.config.syncEnabled || !state.config.githubToken || !state.config.githubOwner || !state.config.githubRepo) {
+    return;
+  }
+  state.initialLoading = true; render();
+  try {
+    const result = await ghLoad();
+    if (result && result.data) {
+      const remote = result.data;
+      const localMod = localStorage.getItem('last_modified') || '';
+      const remoteMod = remote.lastModified || '';
+      // إذا الخادم أحدث أو ما عندنا بيانات محلية، استخدم البيانات السحابية
+      if (!localMod || remoteMod >= localMod) {
+        state.config = Object.assign({}, DEFAULT_CONFIG, remote.config);
+        state.txns = remote.txns || [];
+        state.merchantRules = remote.merchantRules || {};
+        localStorage.setItem('last_modified', remoteMod);
+        saveLocal();
+      }
+      lastSha = result.sha;
+      if (lastSha) localStorage.setItem('last_sha', lastSha);
+      setSyncStatus('synced');
+    } else {
+      // الملف غير موجود بعد — سيُنشأ عند أول حفظ
+      setSyncStatus('pending');
+      scheduleSync();
+    }
+  } catch (err) {
+    setSyncStatus('error', err.message);
+    state.loadError = err.message;
+  } finally {
+    state.initialLoading = false;
+    render();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// المُقدّم
+// ═══════════════════════════════════════════════════════════════════════
+function render() {
+  for (let i = 0; i < charts.length; i++) { try { charts[i].destroy(); } catch (e) {} }
+  charts = [];
+  const root = document.getElementById('root');
+  let html = '';
+  if (state.initialLoading) html = loadingView();
+  else if (!state.unlocked && state.pinHash) html = pinGateView();
+  else if (state.view === 'settings') html = settingsView();
+  else if (state.view === 'github-setup') html = githubSetupView();
+  else if (state.view === 'guide') html = guideView();
+  else if (state.editingTxn) html = editTxnView();
+  else {
+    html = '<div class="app">';
+    if (state.tab === 'dashboard')    html += dashboardView();
+    if (state.tab === 'paste')        html += pasteView();
+    if (state.tab === 'analytics')    html += analyticsView();
+    if (state.tab === 'transactions') html += transactionsView();
+    html += bottomNav();
+    html += '</div>';
+  }
+  root.innerHTML = html;
+  attachEvents();
+  setTimeout(renderCharts, 0);
+  const autofocus = document.querySelector('[data-autofocus]');
+  if (autofocus) autofocus.focus();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// الواجهات
+// ═══════════════════════════════════════════════════════════════════════
+function loadingView() {
+  return `
+    <div class="loading-screen">
+      <div class="big-spinner"></div>
+      <div class="display" style="font-size:18px;">جاري تحميل بياناتك من السحابة</div>
+      <div style="font-size:12px; color:var(--ink-mute);">لحظات...</div>
+    </div>
+  `;
+}
+
+function pinGateView() {
+  return `
+    <div class="pin-screen">
+      <div style="font-size:48px; margin-bottom:16px;">🔒</div>
+      <div class="display" style="font-size:24px; margin-bottom:8px;">ميزانيتي</div>
+      <div style="font-size:13px; color:var(--ink-mute); margin-bottom:24px;">أدخلي الرمز</div>
+      <input id="pinInput" type="password" inputmode="numeric"
+        class="pin-input ${state.pinAttemptError ? 'error' : ''}" data-autofocus data-action="pin-input-keypress" />
+      ${state.pinAttemptError ? '<div style="color:var(--danger); font-size:13px; margin-top:12px;">رمز خاطئ</div>' : ''}
+      <button class="btn btn-primary" style="margin-top:24px; padding:10px 28px;" data-action="pin-submit">دخول</button>
+    </div>
+  `;
+}
+
+function dashboardView() {
+  const cfg = state.config;
+  const ckey = cycleKey(cfg.resetDay);
+  const cycleTxns = txnsInCycle(state.txns, ckey, cfg.resetDay);
+  const spendingTxns = cycleTxns.filter(t => t.type !== 'income');
+  const spent = spendingTxns.reduce((s, t) => s + t.amount, 0);
+  const remaining = cfg.monthlyBudget - spent;
+  const progress = (spent / cfg.monthlyBudget) * 100;
+
+  const today = new Date();
+  const parts = ckey.split('-').map(Number);
+  const startD = new Date(parts[0], parts[1] - 1, cfg.resetDay);
+  const endD = new Date(parts[0], parts[1], cfg.resetDay - 1, 23, 59, 59);
+  const daysTotal = Math.round((endD - startD) / 86400000) + 1;
+  const daysElapsed = Math.min(daysTotal, Math.max(1, Math.round((today - startD) / 86400000) + 1));
+  const daysLeft = Math.max(0, daysTotal - daysElapsed);
+  const timePct = (daysElapsed / daysTotal) * 100;
+  const safeDaily = daysLeft > 0 ? Math.max(0, (remaining - cfg.savingsGoal)) / daysLeft : 0;
+
+  const prevD = new Date(parts[0], parts[1] - 2, 1);
+  const prevCkey = prevD.getFullYear() + '-' + String(prevD.getMonth() + 1).padStart(2, '0');
+  const prevTxns = txnsInCycle(state.txns, prevCkey, cfg.resetDay);
+  const prevSpent = prevTxns.filter(t => t.type !== 'income').reduce((s, t) => s + t.amount, 0);
+
+  const catTotals = {};
+  for (let i = 0; i < spendingTxns.length; i++) {
+    const t = spendingTxns[i]; catTotals[t.category] = (catTotals[t.category] || 0) + t.amount;
+  }
+  const topCatEntry = Object.entries(catTotals).sort((a, b) => b[1] - a[1])[0];
+
+  const overBudget = remaining < 0;
+  const tightPace = progress > timePct + 8;
+  const statusBg = overBudget ? 'card-danger' : (tightPace ? 'card-warn' : 'card-ok');
+  const statusIcon = overBudget ? '⚠️' : (tightPace ? '📉' : '✅');
+  const statusColor = overBudget ? 'var(--danger)' : (tightPace ? 'var(--warn)' : 'var(--accent)');
+  const statusTitle = overBudget ? 'تجاوزتي الميزانية' : (tightPace ? 'مسرعة شوي' : 'كل شي تمام');
+  const statusMsg = overBudget ? 'تجاوزتي بـ ' + fmt(-remaining, cfg.currency) + '. خفّفي لباقي الشهر.'
+    : (daysLeft > 0 ? 'تقدرين تصرفين ' + fmt(safeDaily, cfg.currency) + ' يومياً للباقي وتحققين هدف التوفير.' : 'الدورة انتهت — راجعي الشهر.');
+
+  return `
+    <header class="app-header">
+      <div class="title-block">
+        <div class="label" style="display:flex; align-items:center; gap:8px;">
+          الميزانية <span data-sync-indicator>${syncIndicatorHTML()}</span>
+        </div>
+        <h1>${esc(monthLabel(ckey))}</h1>
+      </div>
+      <div class="row gap-2">
+        <button class="icon-btn" data-action="open-guide">📱</button>
+        <button class="icon-btn" data-action="open-settings">⚙️</button>
+      </div>
+    </header>
+
+    <section class="mx-5">
+      <div class="card card-dark">
+        <div class="hero-label">💼 المتبقي من الميزانية</div>
+        <div class="hero-amount num" style="color: ${overBudget ? '#FF9B8B' : 'white'};">${fmtNoCur(Math.max(0, remaining))}</div>
+        <div class="hero-sub">${esc(cfg.currency)} من ${esc(fmt(cfg.monthlyBudget, cfg.currency))}</div>
+        <div class="bar-pair">
+          <div>
+            <div class="bar-pair-label"><span>مرّ من الشهر</span><span class="num">${daysElapsed} / ${daysTotal} يوم</span></div>
+            <div class="bar-track dark"><div class="bar-fill" style="width:${Math.min(100, timePct)}%; background:rgba(255,255,255,0.85);"></div></div>
+          </div>
+          <div>
+            <div class="bar-pair-label"><span>صرفتي</span><span class="num">${esc(fmt(spent, cfg.currency))}</span></div>
+            <div class="bar-track dark"><div class="bar-fill" style="width:${Math.min(100, progress)}%; background:${overBudget ? '#FF9B8B' : (tightPace ? 'var(--warn-soft)' : 'rgba(255,255,255,0.85)')};"></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mx-5 mt-3">
+      <div class="status-card ${statusBg}">
+        <div class="status-icon">${statusIcon}</div>
+        <div class="flex-1">
+          <div class="status-title" style="color:${statusColor};">${statusTitle}</div>
+          <div class="status-msg">${esc(statusMsg)}</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mx-5 mt-3">
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-label">آمن يومياً</div>
+          <div class="stat-value num ${safeDaily > 100 ? 'stat-ok' : (safeDaily > 0 ? 'stat-warn' : 'stat-danger')}">${esc(fmt(safeDaily, cfg.currency))}</div>
+        </div>
+        <div class="stat-box"><div class="stat-label">عدد العمليات</div><div class="stat-value num">${spendingTxns.length}</div></div>
+        <div class="stat-box"><div class="stat-label">أيام متبقية</div><div class="stat-value num">${daysLeft}</div></div>
+      </div>
+    </section>
+
+    ${topCatEntry ? `
+      <section class="mx-5 mt-3">
+        <div class="card card-tight">
+          <div class="stat-label mb-2">أكثر فئة صرفتي عليها</div>
+          <div class="row">
+            <div style="font-size:28px;">${getCat(topCatEntry[0]).emoji}</div>
+            <div class="flex-1">
+              <div style="font-weight:700; font-size:14px;">${esc(getCat(topCatEntry[0]).name)}</div>
+              <div class="num" style="font-size:13px; color:${getCat(topCatEntry[0]).color};">${esc(fmt(topCatEntry[1], cfg.currency))}</div>
+            </div>
+            <div class="num" style="font-size:11px; color:var(--ink-mute);">${Math.round((topCatEntry[1] / Math.max(1, spent)) * 100)}%</div>
+          </div>
+        </div>
+      </section>
+    ` : ''}
+
+    ${prevSpent > 0 ? `
+      <section class="mx-5 mt-3">
+        <div class="card card-tight">
+          <div class="stat-label mb-2">مقارنة بـ ${esc(monthLabel(prevCkey))}</div>
+          <div class="row" style="justify-content:space-between;">
+            <div class="display num" style="font-size:22px;">${esc(fmt(spent, cfg.currency))}</div>
+            <div class="num" style="font-size:13px; font-weight:700; color:${spent > prevSpent ? 'var(--danger)' : 'var(--ok)'};">
+              ${spent > prevSpent ? '▲' : '▼'} ${esc(fmt(Math.abs(spent - prevSpent), cfg.currency))}
+              <span style="opacity:0.6;"> (${Math.round(Math.abs((spent - prevSpent) / Math.max(1, prevSpent)) * 100)}%)</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    ` : ''}
+
+    <section class="mx-5 mt-3">
+      <div class="card card-accent" style="display:flex; align-items:center; gap:12px;">
+        <div style="font-size:28px;">📋</div>
+        <div class="flex-1">
+          <div style="font-weight:700;">ألصقي رسائل البنك</div>
+          <div style="font-size:11px; opacity:0.8; margin-top:2px;">انسخي من الرسائل وألصقي هنا</div>
+        </div>
+        <button class="btn" style="background:white; color:var(--accent);" data-action="goto-paste">ابدأي</button>
+      </div>
+    </section>
+  `;
+}
+
+function pasteView() {
+  const hasParsed = state.parsedSMS.length > 0;
+  const aiOn = state.config.aiEnabled && state.config.aiApiKey;
+  const unknownCount = state.parsedSMS.filter(t => t.category === 'other').length;
+  return `
+    <header class="app-header">
+      <div class="title-block">
+        <div class="label" style="display:flex; align-items:center; gap:8px;">رسائل البنك <span data-sync-indicator>${syncIndicatorHTML()}</span></div>
+        <h1>إضافة المصاريف</h1>
+      </div>
+    </header>
+    <section class="mx-5">
+      <div class="label-small mb-2">انسخي رسائل البنك من تطبيق الرسائل وألصقي هنا</div>
+      <textarea id="smsTextarea" class="input" dir="auto" placeholder="مثال:\nشراء/POS\nبطاقة:****1234\nبمبلغ:250.00 ر.س\nمن:CARREFOUR HYPER\nفي:15-06-26\n\n(يمكنك لصق عدة رسائل دفعة واحدة)"></textarea>
+      ${state.parseError ? `<div class="mt-2" style="background:var(--danger-soft); color:var(--danger); padding:10px; border-radius:8px; font-size:12px;">${esc(state.parseError)}</div>` : ''}
+      ${!hasParsed ? `
+        <button class="btn btn-primary btn-block mt-3" data-action="parse-sms">حلّل الرسائل</button>
+      ` : `
+        <div class="mt-4" style="display:flex; justify-content:space-between; padding:0 4px; font-size:11px; color:var(--ink-mute);">
+          <span>وجدت ${state.parsedSMS.length} عملية</span>
+          <button data-action="clear-parsed" style="text-decoration:underline;">إعادة</button>
+        </div>
+        ${aiOn && unknownCount > 0 ? `
+          <button class="btn btn-ai btn-block mt-3" data-action="classify-ai" ${state.aiClassifying ? 'disabled' : ''}>
+            ${state.aiClassifying ? '<span class="spinner"></span> جاري التصنيف...' : `🤖 صنّف ${unknownCount} عملية بالذكاء الاصطناعي`}
+          </button>
+        ` : ''}
+        ${!aiOn && unknownCount > 0 ? `
+          <div class="hint mt-3">${unknownCount} عملية ما عرفت أصنّفها. <strong>عدّلي التصنيف يدوياً</strong> — الموقع راح يتذكر للمرات الجاية.</div>
+        ` : ''}
+        <div class="mt-3 space-y-2">${state.parsedSMS.map((p, i) => parsedRow(p, i)).join('')}</div>
+        <button class="btn btn-primary btn-block mt-4" data-action="save-parsed" ${state.aiClassifying ? 'disabled' : ''}>✓ احفظ ${state.parsedSMS.length} عملية</button>
+      `}
+    </section>
+  `;
+}
+
+function parsedRow(txn, i) {
+  const cat = getCat(txn.category);
+  const isLearned = state.merchantRules[txn.merchant.toUpperCase()];
+  return `
+    <div class="card card-tight">
+      <div class="row">
+        <div style="font-size:22px;">${cat.emoji}</div>
+        <div class="flex-1">
+          <div style="font-size:13px; font-weight:700;" class="truncate">${esc(txn.merchant)} ${isLearned ? '<span class="ai-badge">✓ متعلَّم</span>' : ''}</div>
+          <div style="font-size:11px; color:var(--ink-mute);">${esc(cat.name)} · ${esc(txn.date)}</div>
+        </div>
+        <div class="num" style="font-size:13px; font-weight:700; color:${txn.type === 'income' ? 'var(--ok)' : 'var(--ink)'};">${txn.type === 'income' ? '+' : ''}${esc(fmt(txn.amount))}</div>
+        <button class="icon-btn" data-action="toggle-parsed-edit" data-idx="${i}">✏️</button>
+        <button class="icon-btn" data-action="remove-parsed" data-idx="${i}">🗑️</button>
+      </div>
+      ${state['parsedEdit_' + i] ? `
+        <div style="margin-top:12px; padding-top:12px; border-top:1px solid var(--line);">
+          <div class="cat-grid">
+            ${CATEGORIES.map(c => `
+              <button class="cat-btn ${txn.category === c.id ? 'active' : ''}" data-action="set-parsed-cat" data-idx="${i}" data-cat="${c.id}">
+                <div class="em">${c.emoji}</div><div class="nm">${esc(c.name)}</div>
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+function analyticsView() {
+  const cfg = state.config;
+  const ckey = cycleKey(cfg.resetDay);
+  const spendingTxns = txnsInCycle(state.txns, ckey, cfg.resetDay).filter(t => t.type !== 'income');
+
+  if (spendingTxns.length === 0) {
+    return `
+      <header class="app-header">
+        <div class="title-block"><div class="label" style="display:flex; align-items:center; gap:8px;">${esc(monthLabel(ckey))} <span data-sync-indicator>${syncIndicatorHTML()}</span></div><h1>تحليل البيانات</h1></div>
+      </header>
+      <div class="mx-5">
+        <div class="empty-state"><div class="em">📊</div><div class="msg">ما فيه عمليات لهذا الشهر بعد</div><div class="sub">ألصقي رسائل البنك من تبويب "إضافة"</div></div>
+      </div>
+    `;
+  }
+
+  const byCat = {};
+  for (let i = 0; i < spendingTxns.length; i++) { const t = spendingTxns[i]; byCat[t.category] = (byCat[t.category] || 0) + t.amount; }
+  const catData = Object.entries(byCat).map(e => ({ id: e[0], name: getCat(e[0]).name, value: e[1], color: getCat(e[0]).color })).sort((a, b) => b.value - a.value);
+  const byMerch = {};
+  for (let i = 0; i < spendingTxns.length; i++) {
+    const t = spendingTxns[i]; const k = t.merchant.toUpperCase();
+    if (!byMerch[k]) byMerch[k] = { merchant: t.merchant, total: 0, count: 0, category: t.category };
+    byMerch[k].total += t.amount; byMerch[k].count += 1;
+  }
+  const topMerchants = Object.values(byMerch).sort((a, b) => b.total - a.total).slice(0, 10);
+  const totalSpent = spendingTxns.reduce((s, t) => s + t.amount, 0);
+  const avgPerTxn = totalSpent / spendingTxns.length;
+  const biggest = spendingTxns.slice().sort((a, b) => b.amount - a.amount)[0];
+  state._analytics = { catData, spendingTxns, ckey };
+
+  return `
+    <header class="app-header">
+      <div class="title-block"><div class="label" style="display:flex; align-items:center; gap:8px;">تحليل البيانات <span data-sync-indicator>${syncIndicatorHTML()}</span></div><h1>${esc(monthLabel(ckey))}</h1></div>
+    </header>
+    <section class="mx-5">
+      <div class="stats-grid">
+        <div class="stat-box"><div class="stat-label">إجمالي الصرف</div><div class="stat-value num">${esc(fmt(totalSpent, cfg.currency))}</div></div>
+        <div class="stat-box"><div class="stat-label">عدد العمليات</div><div class="stat-value num">${spendingTxns.length}</div></div>
+        <div class="stat-box"><div class="stat-label">متوسط العملية</div><div class="stat-value num">${esc(fmt(avgPerTxn, cfg.currency))}</div></div>
+      </div>
+    </section>
+    <section class="mx-5 mt-4">
+      <div class="card">
+        <div style="font-weight:700; margin-bottom:12px;">وين راحت الفلوس</div>
+        <div class="chart-wrap-tall"><canvas id="catChart"></canvas></div>
+        <div class="space-y-2 mt-4">
+          ${catData.map(c => {
+            const pct = (c.value / totalSpent) * 100;
+            return `
+              <div class="row">
+                <div style="font-size:20px;">${getCat(c.id).emoji}</div>
+                <div class="flex-1">
+                  <div style="display:flex; justify-content:space-between; align-items:baseline;">
+                    <div style="font-size:13px;">${esc(c.name)}</div>
+                    <div class="num" style="font-size:13px; font-weight:700; color:${c.color};">${esc(fmt(c.value, cfg.currency))}</div>
+                  </div>
+                  <div class="bar-track" style="margin-top:4px; height:4px;"><div class="bar-fill" style="width:${pct}%; background:${c.color};"></div></div>
+                </div>
+                <div class="num" style="font-size:10px; color:var(--ink-mute);">${Math.round(pct)}%</div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    </section>
+    <section class="mx-5 mt-4">
+      <div class="card">
+        <div style="font-weight:700; margin-bottom:12px;">أعلى ١٠ تجار</div>
+        <div class="space-y-2">
+          ${topMerchants.map((m, i) => `
+            <div class="row">
+              <div class="display num" style="font-size:13px; width:20px; color:var(--ink-mute);">${i+1}</div>
+              <div style="font-size:20px;">${getCat(m.category).emoji}</div>
+              <div class="flex-1">
+                <div style="font-size:13px;" class="truncate">${esc(m.merchant)}</div>
+                <div style="font-size:10px; color:var(--ink-mute);">${m.count} عملية</div>
+              </div>
+              <div class="num" style="font-size:13px; font-weight:700;">${esc(fmt(m.total, cfg.currency))}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </section>
+    <section class="mx-5 mt-4"><div class="card"><div style="font-weight:700; margin-bottom:12px;">الصرف اليومي</div><div class="chart-wrap"><canvas id="dailyChart"></canvas></div></div></section>
+    <section class="mx-5 mt-4"><div class="card"><div style="font-weight:700;">أي يوم تصرفين أكثر</div><div style="font-size:11px; color:var(--ink-mute); margin-bottom:12px;">إجمالي حسب يوم الأسبوع</div><div class="chart-wrap-small"><canvas id="dowChart"></canvas></div></div></section>
+    <section class="mx-5 mt-4"><div class="card"><div style="font-weight:700; margin-bottom:12px;">آخر ٦ أشهر</div><div class="chart-wrap-small"><canvas id="monthlyChart"></canvas></div></div></section>
+    ${biggest ? `
+      <section class="mx-5 mt-4">
+        <div class="card card-warn">
+          <div style="font-size:11px; color:var(--warn); margin-bottom:4px;">أكبر عملية</div>
+          <div class="row">
+            <div style="font-size:28px;">${getCat(biggest.category).emoji}</div>
+            <div class="flex-1">
+              <div style="font-weight:700; font-size:14px;">${esc(biggest.merchant)}</div>
+              <div style="font-size:11px; color:var(--ink-soft);">${esc(getCat(biggest.category).name)} · ${esc(biggest.date)}</div>
+            </div>
+            <div class="display num" style="font-size:18px; color:var(--warn);">${esc(fmt(biggest.amount, cfg.currency))}</div>
+          </div>
+        </div>
+      </section>
+    ` : ''}
+  `;
+}
+
+function transactionsView() {
+  const cfg = state.config;
+  const ckey = cycleKey(cfg.resetDay);
+  const cycleTxns = txnsInCycle(state.txns, ckey, cfg.resetDay);
+  const filtered = state.filterCat === 'all' ? cycleTxns : cycleTxns.filter(t => t.category === state.filterCat);
+  const sorted = filtered.slice().sort((a, b) => b.date.localeCompare(a.date));
+  const usedCats = Array.from(new Set(cycleTxns.map(t => t.category)));
+  return `
+    <header class="app-header">
+      <div class="title-block">
+        <div class="label" style="display:flex; align-items:center; gap:8px;">${cycleTxns.length} عملية <span data-sync-indicator>${syncIndicatorHTML()}</span></div>
+        <h1>عمليات ${esc(monthLabel(ckey))}</h1>
+      </div>
+    </header>
+    <div class="chip-row hide-scroll">
+      <button class="chip ${state.filterCat === 'all' ? 'active' : ''}" data-action="set-filter" data-cat="all">📋 الكل</button>
+      ${usedCats.map(c => `<button class="chip ${state.filterCat === c ? 'active' : ''}" data-action="set-filter" data-cat="${c}">${getCat(c).emoji} ${esc(getCat(c).name)}</button>`).join('')}
+    </div>
+    <section class="mx-5">
+      ${sorted.length === 0 ? `<div class="empty-state"><div class="em">📭</div><div class="msg">ما فيه عمليات</div></div>` : `
+        <div class="card" style="padding:0; overflow:hidden;">
+          ${sorted.map(t => {
+            const cat = getCat(t.category);
+            return `
+              <button class="list-item" data-action="edit-txn" data-id="${t.id}">
+                <div class="list-item-em">${cat.emoji}</div>
+                <div class="flex-1">
+                  <div class="list-item-title truncate">${esc(t.merchant)}</div>
+                  <div class="list-item-sub">${esc(cat.name)} · ${esc(t.date)}</div>
+                </div>
+                <div class="list-item-amount num" style="color:${t.type === 'income' ? 'var(--ok)' : 'var(--ink)'};">${t.type === 'income' ? '+' : ''}${esc(fmt(t.amount, cfg.currency))}</div>
+              </button>
+            `;
+          }).join('')}
+        </div>
+      `}
+    </section>
+  `;
+}
+
+function editTxnView() {
+  const t = state.editingTxn;
+  return `
+    <div class="app">
+      <header class="app-header">
+        <div class="row gap-2">
+          <button class="icon-btn" data-action="cancel-edit">→</button>
+          <h1>تعديل العملية</h1>
+        </div>
+        <button class="btn btn-dark" data-action="save-edit">✓ حفظ</button>
+      </header>
+      <div class="mx-5">
+        <div class="card space-y-4">
+          <div><label class="label-small">التاجر</label><input id="editMerchant" type="text" class="input mt-2" dir="auto" value="${esc(t.merchant)}" /></div>
+          <div><label class="label-small">المبلغ</label><input id="editAmount" type="number" class="input-big mt-2" value="${t.amount}" /></div>
+          <div><label class="label-small">التاريخ</label><input id="editDate" type="date" class="input mt-2" value="${esc(t.date)}" /></div>
+          <div>
+            <label class="label-small mb-2">التصنيف</label>
+            <div class="cat-grid mt-2">
+              ${CATEGORIES.map(c => `<button class="cat-btn ${t.category === c.id ? 'active' : ''}" data-action="set-edit-cat" data-cat="${c.id}"><div class="em">${c.emoji}</div><div class="nm">${esc(c.name)}</div></button>`).join('')}
+            </div>
+            <div class="hint mt-2">💡 لو غيّرتي التصنيف، الموقع راح يحفظه ويستخدمه تلقائياً لنفس التاجر في المستقبل.</div>
+          </div>
+        </div>
+        <div class="text-center mt-4"><button data-action="delete-txn" style="color:var(--danger); font-size:13px;">حذف العملية</button></div>
+      </div>
+    </div>
+  `;
+}
+
+function settingsView() {
+  const cfg = state.config;
+  const learnedCount = Object.keys(state.merchantRules).length;
+  const syncConfigured = cfg.githubToken && cfg.githubOwner && cfg.githubRepo;
+  return `
+    <div class="app">
+      <header class="app-header">
+        <div class="row gap-2">
+          <button class="icon-btn" data-action="close-view">→</button>
+          <h1>الإعدادات</h1>
+        </div>
+        <button class="btn btn-dark" data-action="save-settings">✓ حفظ</button>
+      </header>
+
+      <div class="mx-5 space-y-3">
+        <div class="card space-y-5">
+          <div><label class="label-small">الميزانية الشهرية</label><input id="setBudget" type="number" class="input-big mt-2" value="${cfg.monthlyBudget}" /></div>
+          <div><label class="label-small" style="color:var(--accent);">هدف التوفير</label><input id="setSavings" type="number" class="input-big mt-2" value="${cfg.savingsGoal}" /></div>
+          <div><label class="label-small">يوم وصول التحويل</label><input id="setResetDay" type="number" min="1" max="28" class="input-big mt-2" value="${cfg.resetDay}" /></div>
+        </div>
+
+        <div class="card" style="border:1.5px solid var(--sync); background: linear-gradient(180deg, var(--sync-soft) 0%, var(--surface) 60%);">
+          <div class="toggle-row mb-3">
+            <div>
+              <div style="font-weight:800; font-size:15px; color:var(--sync);">☁️ المزامنة عبر GitHub</div>
+              <div style="font-size:11px; color:var(--ink-soft); margin-top:2px;">${syncConfigured ? 'بياناتك تتزامن بين كل أجهزتك تلقائياً' : 'احفظي بياناتك في السحابة وافتحيها من أي جهاز'}</div>
+            </div>
+            <div class="switch ${cfg.syncEnabled ? 'on-sync' : ''}" data-action="toggle-sync"></div>
+          </div>
+          ${cfg.syncEnabled ? `
+            ${!syncConfigured ? `
+              <button class="btn btn-sync btn-block mt-2" data-action="open-github-setup">🚀 ابدأي الإعداد</button>
+            ` : `
+              <div style="font-size:12px; color:var(--ink-soft); line-height:1.6;">
+                <strong>المستودع:</strong> <span class="num">${esc(cfg.githubOwner)}/${esc(cfg.githubRepo)}</span><br>
+                <strong>الحالة:</strong> ${syncIndicatorHTML() || '<span class="sync-pill sync-pill-pending">لم تبدأ بعد</span>'}
+                ${state.syncError ? `<br><span style="color:var(--danger);">${esc(state.syncError)}</span>` : ''}
+              </div>
+              <div class="row gap-2 mt-3">
+                <button class="btn btn-soft flex-1" data-action="open-github-setup">تعديل الإعداد</button>
+                <button class="btn btn-sync flex-1" data-action="force-sync">↻ مزامنة الآن</button>
+              </div>
+            `}
+          ` : `
+            <div class="hint">المزامنة تستخدم GitHub كقاعدة بيانات مجانية. تحتاجين حساب GitHub ومستودع خاص.</div>
+          `}
+        </div>
+
+        <div class="card" style="border:1.5px solid var(--ai); background: linear-gradient(180deg, var(--ai-soft) 0%, var(--surface) 60%);">
+          <div class="toggle-row mb-3">
+            <div>
+              <div style="font-weight:800; font-size:15px; color:var(--ai);">🤖 الذكاء الاصطناعي</div>
+              <div style="font-size:11px; color:var(--ink-soft); margin-top:2px;">تصنيف دقيق لأي تاجر</div>
+            </div>
+            <div class="switch ${cfg.aiEnabled ? 'on-ai' : ''}" data-action="toggle-ai"></div>
+          </div>
+          ${cfg.aiEnabled ? `
+            <div style="margin-top:12px;">
+              <label class="label-small">مفتاح Anthropic API</label>
+              <input id="setApiKey" type="password" class="input mt-2" placeholder="sk-ant-..." value="${esc(cfg.aiApiKey)}" style="direction:ltr; font-family:monospace; font-size:11px;" />
+              <div class="hint mt-2" style="font-size:11px;">احصلي على مفتاح من <strong>console.anthropic.com</strong>. التكلفة: تقريباً نصف دولار شهرياً.</div>
+              ${cfg.aiApiKey ? `<button class="btn btn-ai mt-2" data-action="test-ai" style="width:100%;">🧪 جرّبي الاتصال</button>` : ''}
+            </div>
+          ` : `<div class="hint">يحتاج مفتاح API من Anthropic (منفصل عن claude.ai). تكلفة بسيطة جداً.</div>`}
+        </div>
+
+        <div class="card">
+          <div style="font-weight:700; margin-bottom:4px;">📚 التعلّم الذاتي</div>
+          <div style="font-size:12px; color:var(--ink-soft); line-height:1.6;">
+            كل تصحيح تسوّينه يصير قاعدة دائمة.<br><br>
+            <strong>التجار المتعلَّمين: ${learnedCount}</strong>
+            ${learnedCount > 0 ? `<button data-action="clear-rules" style="display:block; color:var(--danger); font-size:11px; margin-top:8px;">مسح كل القواعد المتعلَّمة</button>` : ''}
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="font-weight:700; margin-bottom:12px;">🔒 رمز الحماية</div>
+          ${state.pinHash ? `
+            <div style="font-size:12px; color:var(--ink-soft); margin-bottom:12px;">الرمز مفعّل.</div>
+            <button data-action="remove-pin" style="font-size:13px; color:var(--danger);">إلغاء الرمز</button>
+          ` : `
+            <input id="newPin" type="password" inputmode="numeric" class="input num" placeholder="٤ أرقام على الأقل" style="direction:ltr;" />
+            <button class="btn btn-primary mt-3" data-action="set-pin">تفعيل</button>
+          `}
+        </div>
+
+        <div class="card">
+          <div style="font-weight:700; margin-bottom:4px;">💾 نسخة احتياطية يدوية</div>
+          <div style="font-size:12px; color:var(--ink-soft); margin-bottom:12px;">للحالات الطارئة. عدد العمليات: ${state.txns.length}</div>
+          <div class="row gap-2">
+            <button class="btn btn-primary flex-1" data-action="export-data">📤 تصدير</button>
+            <button class="btn btn-soft flex-1" data-action="trigger-import">📥 استيراد</button>
+            <input type="file" id="importFile" accept=".json" class="file-hidden" />
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="font-weight:700; margin-bottom:4px;">📱 دليل الاستخدام</div>
+          <button class="btn btn-soft mt-2" data-action="open-guide" style="width:100%;">افتحي الدليل</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function githubSetupView() {
+  const cfg = state.config;
+  return `
+    <div class="app">
+      <header class="app-header">
+        <div class="row gap-2">
+          <button class="icon-btn" data-action="back-to-settings">→</button>
+          <h1>إعداد المزامنة</h1>
+        </div>
+      </header>
+
+      <div class="mx-5 space-y-3">
+        <div class="card card-tight" style="background:var(--sync-soft);">
+          <div style="font-size:12px; color:var(--ink-soft); line-height:1.6;">
+            <strong style="color:var(--sync);">قبل ما تبدأي،</strong> لازم تسوّين شيئين على GitHub:
+            <br>١. مستودع خاص (private repo) لحفظ البيانات
+            <br>٢. مفتاح وصول شخصي (Personal Access Token)
+            <br><br>
+            <strong>دليل خطوة بخطوة موجود في زر "📖 الدليل الكامل" تحت.</strong>
+          </div>
+        </div>
+
+        <div class="card space-y-4">
+          <div>
+            <label class="label-small">اسم المستخدم في GitHub</label>
+            <input id="ghOwner" type="text" class="input mt-2" placeholder="مثلاً: aisha123" value="${esc(cfg.githubOwner)}" style="direction:ltr; text-align:left;" />
+          </div>
+          <div>
+            <label class="label-small">اسم المستودع الخاص</label>
+            <input id="ghRepo" type="text" class="input mt-2" placeholder="مثلاً: budget-data" value="${esc(cfg.githubRepo)}" style="direction:ltr; text-align:left;" />
+          </div>
+          <div>
+            <label class="label-small">مفتاح الوصول (Personal Access Token)</label>
+            <input id="ghToken" type="password" class="input mt-2" placeholder="github_pat_..." value="${esc(cfg.githubToken)}" style="direction:ltr; text-align:left; font-family:monospace; font-size:11px;" />
+            <div class="hint mt-2" style="font-size:11px;">المفتاح يُحفظ في متصفحك فقط. ما يطلع لأي مكان غير GitHub نفسه.</div>
+          </div>
+          <div>
+            <label class="label-small">اسم الملف (اختياري)</label>
+            <input id="ghPath" type="text" class="input mt-2" placeholder="budget-data.json" value="${esc(cfg.githubPath || 'budget-data.json')}" style="direction:ltr; text-align:left;" />
+          </div>
+        </div>
+
+        <button class="btn btn-sync btn-block" data-action="test-and-save-github">🧪 جرّبي الاتصال واحفظي</button>
+
+        <details class="card">
+          <summary style="font-weight:700; cursor:pointer;">📖 الدليل الكامل لإعداد GitHub</summary>
+          <div style="font-size:12px; color:var(--ink-soft); line-height:1.8; margin-top:12px;">
+            <strong>الخطوة ١: إنشاء مستودع خاص</strong>
+            <br>١. روحي إلى <strong>github.com</strong> ← فوق يمين اضغطي زر <strong>+</strong> ← اختاري <strong>New repository</strong>
+            <br>٢. اكتبي اسم (مثل <code>budget-data</code>)
+            <br>٣. <strong>مهم:</strong> اختاري <strong>Private</strong> (مو Public)
+            <br>٤. اضغطي <strong>Create repository</strong>
+            <br><br>
+            <strong>الخطوة ٢: إنشاء مفتاح وصول (Fine-grained Token)</strong>
+            <br>١. اضغطي على صورتك فوق يمين ← <strong>Settings</strong>
+            <br>٢. من القائمة اليسار، نزّلي للأسفل ← <strong>Developer settings</strong>
+            <br>٣. اضغطي <strong>Personal access tokens</strong> ← <strong>Fine-grained tokens</strong>
+            <br>٤. اضغطي <strong>Generate new token</strong>
+            <br>٥. اعطيه اسم: <code>budget-sync</code>
+            <br>٦. <strong>Expiration:</strong> اختاري سنة (1 year) أو "No expiration"
+            <br>٧. <strong>Repository access:</strong> اختاري <strong>Only select repositories</strong> ← اختاري المستودع اللي أنشأتيه (budget-data)
+            <br>٨. <strong>Repository permissions:</strong> ابحثي عن <strong>Contents</strong> ← غيّريها إلى <strong>Read and write</strong>
+            <br>٩. نزّلي للأسفل ← <strong>Generate token</strong>
+            <br>١٠. <strong>انسخي المفتاح فوراً!</strong> (يبدأ بـ <code>github_pat_</code>) — ما راح يظهر مرة ثانية
+            <br><br>
+            <strong>الخطوة ٣: ألصقي البيانات فوق</strong>
+            <br>اسم المستخدم + اسم المستودع + المفتاح. اضغطي "جرّبي الاتصال" للتأكد.
+          </div>
+        </details>
+      </div>
+    </div>
+  `;
+}
+
+function guideView() {
+  const steps = [
+    { t: 'فعّلي المزامنة عبر GitHub', d: 'من الإعدادات → "☁️ المزامنة عبر GitHub" → فعّليها واتبعي الإعداد. كل بياناتك تتحفظ في حسابك وتتزامن بين كل أجهزتك تلقائياً.' },
+    { t: 'أضيفي للشاشة الرئيسية (آيفون)', d: 'في Safari، اضغطي زر المشاركة → "إضافة إلى الشاشة الرئيسية".' },
+    { t: 'إضافة المصاريف بالنسخ واللصق', d: 'من تطبيق الرسائل: اختاري عدة رسائل بنك → نسخ → ارجعي للموقع → ألصقي في تبويب "إضافة".' },
+    { t: 'التعلّم التلقائي', d: 'لما يحط الموقع تاجر في "أخرى"، عدّليه يدوياً مرة. من بعدها بيتذكّره ويصنّفه صح تلقائياً.' },
+    { t: 'الذكاء الاصطناعي (اختياري)', d: 'لو تبين تصنيف فوري للتجار الجدد بدون انتظار، فعّلي AI من الإعدادات (يحتاج مفتاح Anthropic).' },
+    { t: 'رمز الحماية', d: 'لو رفعتي الموقع على GitHub Pages، فعّلي رمز PIN — حتى لو حد لقى الرابط، ما يدخل.' },
+  ];
+  return `
+    <div class="app">
+      <header class="app-header"><div class="row gap-2"><button class="icon-btn" data-action="close-view">→</button><h1>دليل الاستخدام</h1></div></header>
+      <div class="mx-5 space-y-3">
+        ${steps.map((s, i) => `
+          <div class="card">
+            <div class="row" style="align-items:flex-start;">
+              <div class="display num" style="font-size:22px; color:var(--accent);">${String(i + 1).padStart(2, '0')}</div>
+              <div class="flex-1">
+                <div style="font-weight:700;">${esc(s.t)}</div>
+                <div style="font-size:13px; margin-top:6px; color:var(--ink-soft); line-height:1.6;">${esc(s.d)}</div>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function bottomNav() {
+  const tabs = [{ id: 'dashboard', label: 'الرئيسية', icon: '📊' }, { id: 'paste', label: 'إضافة', icon: '➕' }, { id: 'analytics', label: 'تحليل', icon: '📈' }, { id: 'transactions', label: 'العمليات', icon: '📋' }];
+  return `
+    <nav class="bottom-nav"><div class="bottom-nav-inner">
+      ${tabs.map(t => `<button class="tab-btn ${state.tab === t.id ? 'active' : ''}" data-action="set-tab" data-tab="${t.id}"><div class="ic">${t.icon}</div><div class="lbl">${esc(t.label)}</div></button>`).join('')}
+    </div></nav>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// الرسوم
+// ═══════════════════════════════════════════════════════════════════════
+function renderCharts() {
+  if (typeof Chart === 'undefined') return;
+  if (!state._analytics) return;
+  const cfg = state.config;
+  const { catData, spendingTxns, ckey } = state._analytics;
+  const chartFont = { family: 'Tajawal', size: 11 };
+  const tipStyle = { backgroundColor: '#1B1F2A', titleFont: chartFont, bodyFont: chartFont, padding: 8, cornerRadius: 6 };
+
+  const catCanvas = document.getElementById('catChart');
+  if (catCanvas) {
+    charts.push(new Chart(catCanvas.getContext('2d'), {
+      type: 'doughnut',
+      data: { labels: catData.map(c => c.name), datasets: [{ data: catData.map(c => c.value), backgroundColor: catData.map(c => c.color), borderWidth: 0 }] },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '55%', plugins: { legend: { display: false }, tooltip: Object.assign({}, tipStyle, { callbacks: { label: ctx => ctx.label + ': ' + fmt(ctx.parsed, cfg.currency) } }) } },
+    }));
+  }
+  const dailyCanvas = document.getElementById('dailyChart');
+  if (dailyCanvas) {
+    const byDay = {};
+    for (let i = 0; i < spendingTxns.length; i++) byDay[spendingTxns[i].date] = (byDay[spendingTxns[i].date] || 0) + spendingTxns[i].amount;
+    const labels = Object.keys(byDay).sort();
+    charts.push(new Chart(dailyCanvas.getContext('2d'), {
+      type: 'bar',
+      data: { labels: labels.map(d => d.slice(8, 10)), datasets: [{ data: labels.map(d => Math.round(byDay[d])), backgroundColor: '#2D5F50', borderRadius: 4 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: Object.assign({}, tipStyle, { callbacks: { label: ctx => fmt(ctx.parsed.y, cfg.currency) } }) }, scales: { y: { ticks: { font: chartFont, color: '#8A8F9C' }, grid: { color: '#E5DDCB' } }, x: { ticks: { font: chartFont, color: '#8A8F9C' }, grid: { display: false } } } },
+    }));
+  }
+  const dowCanvas = document.getElementById('dowChart');
+  if (dowCanvas) {
+    const byDow = [0,0,0,0,0,0,0];
+    for (let i = 0; i < spendingTxns.length; i++) byDow[new Date(spendingTxns[i].date + 'T12:00:00').getDay()] += spendingTxns[i].amount;
+    charts.push(new Chart(dowCanvas.getContext('2d'), {
+      type: 'bar',
+      data: { labels: DOWS_AR, datasets: [{ data: byDow.map(v => Math.round(v)), backgroundColor: '#B07523', borderRadius: 4 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: Object.assign({}, tipStyle, { callbacks: { label: ctx => fmt(ctx.parsed.y, cfg.currency) } }) }, scales: { y: { ticks: { font: chartFont, color: '#8A8F9C' }, grid: { color: '#E5DDCB' } }, x: { ticks: { font: chartFont, color: '#8A8F9C' }, grid: { display: false } } } },
+    }));
+  }
+  const monthlyCanvas = document.getElementById('monthlyChart');
+  if (monthlyCanvas) {
+    const parts = ckey.split('-').map(Number);
+    const monthly = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(parts[0], parts[1] - 1 - i, 1);
+      const k = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+      const t = txnsInCycle(state.txns, k, cfg.resetDay).filter(x => x.type !== 'income');
+      monthly.push({ month: MONTHS_AR_SHORT[d.getMonth()], amount: Math.round(t.reduce((s, x) => s + x.amount, 0)) });
+    }
+    charts.push(new Chart(monthlyCanvas.getContext('2d'), {
+      type: 'line',
+      data: { labels: monthly.map(m => m.month), datasets: [{ data: monthly.map(m => m.amount), borderColor: '#2D5F50', backgroundColor: 'rgba(45,95,80,0.1)', borderWidth: 2.5, tension: 0.3, fill: true, pointBackgroundColor: '#2D5F50', pointRadius: 4 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: Object.assign({}, tipStyle, { callbacks: { label: ctx => fmt(ctx.parsed.y, cfg.currency) } }) }, scales: { y: { ticks: { font: chartFont, color: '#8A8F9C' }, grid: { color: '#E5DDCB' } }, x: { ticks: { font: chartFont, color: '#8A8F9C' }, grid: { display: false } } } },
+    }));
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// الأحداث
+// ═══════════════════════════════════════════════════════════════════════
+function attachEvents() {
+  const els = document.querySelectorAll('[data-action]');
+  for (let i = 0; i < els.length; i++) {
+    const el = els[i];
+    const action = el.dataset.action;
+    if (action === 'pin-input-keypress') {
+      el.addEventListener('keydown', e => { if (e.key === 'Enter') handleAction('pin-submit', e); });
+    } else {
+      el.addEventListener('click', e => handleAction(action, e));
+    }
+  }
+  const importFile = document.getElementById('importFile');
+  if (importFile) importFile.addEventListener('change', handleImportFile);
+}
+
+function handleAction(action, e) {
+  const el = e.currentTarget || (e.target && e.target.closest('[data-action]'));
+  const data = el ? el.dataset : {};
+
+  switch (action) {
+    case 'open-settings': setState({ view: 'settings' }); break;
+    case 'open-guide': setState({ view: 'guide' }); break;
+    case 'open-github-setup': setState({ view: 'github-setup' }); break;
+    case 'back-to-settings': setState({ view: 'settings' }); break;
+    case 'close-view': setState({ view: null }); break;
+    case 'set-tab': setState({ tab: data.tab, parsedSMS: [], parseError: '', filterCat: 'all' }); break;
+    case 'goto-paste': setState({ tab: 'paste' }); break;
+    case 'set-filter': setState({ filterCat: data.cat }); break;
+
+    case 'parse-sms': {
+      const ta = document.getElementById('smsTextarea');
+      const text = ta ? ta.value : '';
+      if (!text.trim()) { setState({ parseError: 'ألصقي نص الرسائل أولاً' }); return; }
+      const results = parseMultipleSMS(text);
+      if (results.length === 0) { setState({ parseError: 'ما قدرت أستخرج معلومات. تأكدي إنه نص رسالة البنك مع مبلغ.' }); return; }
+      setState({ parsedSMS: results, parseError: '' });
+      break;
+    }
+    case 'clear-parsed': setState({ parsedSMS: [] }); break;
+    case 'classify-ai': classifyAllUnknown(); break;
+    case 'save-parsed': {
+      const newTxns = state.parsedSMS.map(t => Object.assign({}, t, { id: newId() }));
+      state.txns = newTxns.concat(state.txns);
+      saveAndSync();
+      setState({ parsedSMS: [], parseError: '', tab: 'dashboard' });
+      break;
+    }
+    case 'toggle-parsed-edit': { const k = 'parsedEdit_' + data.idx; setState({ [k]: !state[k] }); break; }
+    case 'remove-parsed': { const idx = parseInt(data.idx, 10); setState({ parsedSMS: state.parsedSMS.filter((_, i) => i !== idx) }); break; }
+    case 'set-parsed-cat': {
+      const idx = parseInt(data.idx, 10);
+      const updated = state.parsedSMS.slice();
+      const oldCat = updated[idx].category;
+      const newCat = data.cat;
+      updated[idx] = Object.assign({}, updated[idx], { category: newCat });
+      if (oldCat !== newCat && updated[idx].merchant && updated[idx].merchant !== 'غير معروف') {
+        state.merchantRules[updated[idx].merchant.toUpperCase()] = newCat;
+        saveAndSync();
+      }
+      setState({ parsedSMS: updated });
+      break;
+    }
+
+    case 'edit-txn': {
+      const t = state.txns.find(x => x.id === data.id);
+      if (t) setState({ editingTxn: Object.assign({}, t), editingTxnOriginal: Object.assign({}, t) });
+      break;
+    }
+    case 'set-edit-cat': { state.editingTxn = Object.assign({}, state.editingTxn, { category: data.cat }); render(); break; }
+    case 'save-edit': {
+      const m = document.getElementById('editMerchant').value;
+      const a = parseFloat(document.getElementById('editAmount').value) || 0;
+      const d = document.getElementById('editDate').value;
+      const newCat = state.editingTxn.category;
+      const origCat = state.editingTxnOriginal ? state.editingTxnOriginal.category : newCat;
+      if (newCat !== origCat && m && m !== 'غير معروف') {
+        state.merchantRules[m.toUpperCase()] = newCat;
+      }
+      const patch = { merchant: m, amount: a, date: d, category: newCat };
+      state.txns = state.txns.map(t => t.id === state.editingTxn.id ? Object.assign({}, t, patch) : t);
+      saveAndSync();
+      setState({ editingTxn: null, editingTxnOriginal: null });
+      break;
+    }
+    case 'cancel-edit': setState({ editingTxn: null, editingTxnOriginal: null }); break;
+    case 'delete-txn': {
+      if (confirm('متأكدة من حذف العملية؟')) {
+        state.txns = state.txns.filter(t => t.id !== state.editingTxn.id);
+        saveAndSync();
+        setState({ editingTxn: null, editingTxnOriginal: null });
+      }
+      break;
+    }
+
+    case 'save-settings': {
+      const b = parseFloat(document.getElementById('setBudget').value) || 0;
+      const s = parseFloat(document.getElementById('setSavings').value) || 0;
+      const r = Math.min(28, Math.max(1, parseInt(document.getElementById('setResetDay').value, 10) || 1));
+      const apiKeyEl = document.getElementById('setApiKey');
+      const aiApiKey = apiKeyEl ? apiKeyEl.value : state.config.aiApiKey;
+      state.config = Object.assign({}, state.config, { monthlyBudget: b, savingsGoal: s, resetDay: r, aiApiKey });
+      saveAndSync();
+      setState({ view: null });
+      break;
+    }
+    case 'toggle-ai': { state.config = Object.assign({}, state.config, { aiEnabled: !state.config.aiEnabled }); saveAndSync(); render(); break; }
+    case 'toggle-sync': {
+      const newVal = !state.config.syncEnabled;
+      state.config = Object.assign({}, state.config, { syncEnabled: newVal });
+      saveLocal();
+      if (newVal && state.config.githubToken && state.config.githubOwner && state.config.githubRepo) {
+        scheduleSync();
+      } else if (!newVal) {
+        setSyncStatus('');
+      }
+      render();
+      break;
+    }
+    case 'test-and-save-github': {
+      const owner = document.getElementById('ghOwner').value.trim();
+      const repo = document.getElementById('ghRepo').value.trim();
+      const token = document.getElementById('ghToken').value.trim();
+      const path = document.getElementById('ghPath').value.trim() || 'budget-data.json';
+      if (!owner || !repo || !token) { alert('املئي كل الحقول'); return; }
+      (async () => {
+        const prev = state.config;
+        state.config = Object.assign({}, state.config, { githubOwner: owner, githubRepo: repo, githubToken: token, githubPath: path, syncEnabled: true });
+        try {
+          const result = await ghLoad();
+          if (result === null) throw new Error('فشل غير معروف');
+          if (result.data) {
+            // البيانات موجودة في السحابة
+            if (confirm('وجدت بيانات في السحابة! هل تبين تستوريديها (سيتم استبدال بياناتك المحلية)؟')) {
+              state.config = Object.assign({}, DEFAULT_CONFIG, result.data.config, { githubOwner: owner, githubRepo: repo, githubToken: token, githubPath: path, syncEnabled: true });
+              state.txns = result.data.txns || [];
+              state.merchantRules = result.data.merchantRules || {};
+              lastSha = result.sha;
+              alert('✓ تم تحميل بياناتك من السحابة');
+            } else {
+              // اكتب فوق
+              lastSha = result.sha;
+              await performSync();
+              alert('✓ تم رفع بياناتك المحلية للسحابة');
+            }
+          } else {
+            // ملف ما هو موجود — أنشئيه
+            await performSync();
+            alert('✓ نجح الاتصال! تم إنشاء الملف في السحابة');
+          }
+          saveLocal();
+          setState({ view: 'settings' });
+        } catch (err) {
+          state.config = prev;
+          alert('❌ فشل الاتصال: ' + err.message + '\n\nتأكدي من:\n- اسم المستخدم والمستودع صحيحين\n- المفتاح صحيح وله صلاحية Contents: Read & Write\n- المستودع موجود فعلاً');
+        }
+      })();
+      break;
+    }
+    case 'force-sync': {
+      (async () => {
+        setSyncStatus('syncing');
+        await performSync();
+      })();
+      break;
+    }
+    case 'test-ai': {
+      (async () => {
+        const apiKeyEl = document.getElementById('setApiKey');
+        if (apiKeyEl) { state.config.aiApiKey = apiKeyEl.value; saveLocal(); }
+        try {
+          const result = await classifyWithAI('CARREFOUR HYPERMARKET');
+          alert('✓ نجح الاتصال! Claude صنّف "كارفور" كـ: ' + result);
+        } catch (err) { alert('❌ فشل: ' + err.message); }
+      })();
+      break;
+    }
+    case 'clear-rules': {
+      if (confirm('سيتم حذف ' + Object.keys(state.merchantRules).length + ' قاعدة متعلَّمة. متأكدة؟')) {
+        state.merchantRules = {};
+        saveAndSync();
+        render();
+      }
+      break;
+    }
+
+    case 'set-pin': {
+      const pinEl = document.getElementById('newPin');
+      const pin = pinEl ? pinEl.value : '';
+      if (pin.length < 4) { alert('الرمز يحتاج ٤ أرقام على الأقل'); return; }
+      const h = hashPin(pin);
+      localStorage.setItem('pin_hash', h);
+      state.pinHash = h;
+      alert('✓ تم تفعيل الرمز');
+      render();
+      break;
+    }
+    case 'remove-pin': {
+      if (confirm('متأكدة؟')) { localStorage.removeItem('pin_hash'); state.pinHash = null; render(); }
+      break;
+    }
+    case 'pin-submit': {
+      const inp = document.getElementById('pinInput');
+      const pin = inp ? inp.value : '';
+      if (hashPin(pin) === state.pinHash) { setState({ unlocked: true, pinAttemptError: false }); }
+      else { if (inp) inp.value = ''; setState({ pinAttemptError: true }); }
+      break;
+    }
+
+    case 'export-data': {
+      const data = { cfg: state.config, txns: state.txns, merchantRules: state.merchantRules, exported: new Date().toISOString() };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'budget-' + todayISO() + '.json'; a.click();
+      URL.revokeObjectURL(url);
+      break;
+    }
+    case 'trigger-import': { const inp = document.getElementById('importFile'); if (inp) inp.click(); break; }
+  }
+}
+
+function handleImportFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!confirm('سيتم استبدال البيانات الحالية بالكامل. متأكدة؟')) return;
+      if (data.cfg) state.config = Object.assign({}, DEFAULT_CONFIG, data.cfg);
+      if (data.txns) state.txns = data.txns;
+      if (data.merchantRules) state.merchantRules = data.merchantRules;
+      saveAndSync();
+      alert('✓ تم الاستيراد بنجاح');
+      render();
+    } catch (err) { alert('❌ ملف غير صالح'); }
+  };
+  reader.readAsText(file);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// التشغيل
+// ═══════════════════════════════════════════════════════════════════════
+initialLoadFromCloud();
+</script>
+</body>
+</html>
