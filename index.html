@@ -39,7 +39,7 @@ input[type="number"] { -moz-appearance: textfield; }
 .gap-2 { gap: 8px; }
 .mx-5 { margin-left: 20px; margin-right: 20px; }
 .mt-2 { margin-top: 8px; } .mt-3 { margin-top: 12px; } .mt-4 { margin-top: 16px; }
-.mb-2 { margin-bottom: 8px; }
+.mb-2 { margin-bottom: 8px; } .mb-3 { margin-bottom: 12px; }
 .text-center { text-align: center; }
 .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hide-scroll::-webkit-scrollbar { display: none; }
@@ -73,12 +73,13 @@ input[type="number"] { -moz-appearance: textfield; }
 .card-ok { background: var(--accent-soft); }
 .card-gh { border:1.5px solid var(--gh); background: linear-gradient(180deg, var(--gh-soft) 0%, var(--surface) 60%); }
 
-.hero-amount { font-size: 48px; font-weight: 800; margin-top: 12px; letter-spacing: -0.02em; }
+.hero-amount { font-size: 44px; font-weight: 800; margin-top: 12px; letter-spacing: -0.02em; }
 .hero-sub { font-size: 13px; opacity: 0.7; margin-top: 4px; }
 .hero-label { font-size: 11px; opacity: 0.7; }
 
 .bar-track { height: 6px; border-radius: 999px; overflow: hidden; background: var(--line); }
 .bar-track.dark { background: rgba(255,255,255,0.15); }
+.bar-track.thin { height: 5px; }
 .bar-fill { height: 100%; border-radius: 999px; transition: width 0.3s; }
 
 .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
@@ -105,7 +106,7 @@ input[type="number"] { -moz-appearance: textfield; }
 .input { width: 100%; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line); font-size: 14px; color: var(--ink); outline: none; }
 .input:focus { border-color: var(--accent); }
 .label-small { font-size: 11px; color: var(--ink-mute); display: block; }
-.input-big { font-size: 32px; font-weight: 800; background: transparent; border: none; border-bottom: 2px solid var(--line-strong); padding: 6px 0; width: 100%; direction: ltr; text-align: left; outline: none; }
+.input-big { font-size: 28px; font-weight: 800; background: transparent; border: none; border-bottom: 2px solid var(--line-strong); padding: 6px 0; width: 100%; direction: ltr; text-align: left; outline: none; }
 .input-big:focus { border-bottom-color: var(--accent); }
 textarea.input { resize: vertical; min-height: 140px; }
 
@@ -168,7 +169,26 @@ textarea.input { resize: vertical; min-height: 140px; }
 .guide-step { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
 .guide-step-num { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: var(--gh); color: white; font-weight: 800; font-size: 13px; flex-shrink: 0; }
 
-.gh-conflict { background: var(--warn-soft); border-radius: 12px; padding: 16px; }
+/* Category progress row */
+.cat-row { padding: 10px 14px; border-top: 1px solid var(--line); }
+.cat-row:first-child { border-top: none; }
+.cat-row-top { display: flex; align-items: center; gap: 10px; }
+.cat-row-em { font-size: 22px; }
+.cat-row-name { font-size: 13px; font-weight: 700; flex: 1; min-width: 0; }
+.cat-row-amount { font-size: 12px; }
+.cat-row-amount .spent { font-weight: 800; }
+.cat-row-amount .target { color: var(--ink-mute); font-size: 11px; }
+.cat-row-bar { margin-top: 6px; }
+.cat-row-status { font-size: 10px; color: var(--ink-mute); margin-top: 4px; display: flex; justify-content: space-between; }
+
+.fab { position: fixed; bottom: 92px; left: 50%; transform: translateX(-50%); padding: 12px 20px; border-radius: 999px; background: var(--accent); color: white; font-weight: 700; font-size: 13px; box-shadow: 0 8px 20px rgba(45,95,80,0.4); z-index: 25; display: inline-flex; align-items: center; gap: 6px; }
+
+.cat-target-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); }
+.cat-target-row:first-child { border-top: none; }
+.cat-target-row .em { font-size: 20px; }
+.cat-target-row .nm { flex: 1; font-size: 13px; font-weight: 700; }
+.cat-target-input { width: 90px; padding: 6px 8px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--line); font-size: 13px; text-align: left; direction: ltr; outline: none; font-weight: 700; }
+.cat-target-input:focus { border-color: var(--accent); }
 </style>
 </head>
 <body>
@@ -178,11 +198,27 @@ textarea.input { resize: vertical; min-height: 140px; }
 'use strict';
 
 // ═══════════════════════════════════════════════════════════════════════
-// الثوابت
+// فئاتك الخاصة (من تطبيق وفير)
 // ═══════════════════════════════════════════════════════════════════════
+const DEFAULT_CATEGORIES = [
+  { id: 'rent',          name: 'إيجار البيت',       emoji: '🏠', color: '#3B82F6', target: 5500 },
+  { id: 'driver',        name: 'السائق',            emoji: '👨‍✈️', color: '#10B981', target: 2592 },
+  { id: 'car',           name: 'السيارة',           emoji: '🚗', color: '#06B6D4', target: 2000 },
+  { id: 'fuel',          name: 'البنزين',           emoji: '⛽', color: '#5C6B8A', target: 1500 },
+  { id: 'maid',          name: 'راتب الخادمة',      emoji: '🧹', color: '#22C55E', target: 1500 },
+  { id: 'travel',        name: 'سفرة لندن',         emoji: '✈️', color: '#F97316', target: 1500 },
+  { id: 'groceries',     name: 'سوبرماركت',         emoji: '🛒', color: '#84CC16', target: 1200 },
+  { id: 'misk_payment',  name: 'تسديد مسك',         emoji: '💰', color: '#EAB308', target: 800 },
+  { id: 'internet',      name: 'النت',              emoji: '🌐', color: '#7C3AED', target: 683 },
+  { id: 'baby_supplies', name: 'حليب وحفايظ مسك',  emoji: '🍼', color: '#D4943B', target: 600 },
+  { id: 'leisure',       name: 'التمشية',           emoji: '☕', color: '#B07523', target: 600 },
+  { id: 'emergency',     name: 'الطوارئ',           emoji: '🚨', color: '#EC4899', target: 500 },
+  { id: 'electricity',   name: 'الكهرباء',          emoji: '⚡', color: '#0EA5E9', target: 280 },
+  { id: 'baby_clothes',  name: 'ملابس مسك',         emoji: '👶', color: '#F472B6', target: 150 },
+  { id: 'other',         name: 'أخرى',              emoji: '📌', color: '#9B9B9B', target: 0 },
+];
+
 const DEFAULT_CONFIG = {
-  monthlyBudget: 18000,
-  savingsGoal: 2000,
   currency: 'ريال',
   resetDay: 1,
   aiEnabled: false,
@@ -191,35 +227,18 @@ const DEFAULT_CONFIG = {
   ghRepo: '',
   ghToken: '',
   ghPath: 'data.json',
+  categories: DEFAULT_CATEGORIES,
 };
-
-const CATEGORIES = [
-  { id: 'groceries', name: 'سوبرماركت', emoji: '🛒', color: '#2D5F50' },
-  { id: 'restaurants', name: 'مطاعم', emoji: '🍽️', color: '#B07523' },
-  { id: 'delivery', name: 'توصيل طعام', emoji: '🛵', color: '#D4943B' },
-  { id: 'fuel', name: 'بنزين', emoji: '⛽', color: '#5C6B8A' },
-  { id: 'ride', name: 'مواصلات', emoji: '🚗', color: '#3A5A7A' },
-  { id: 'pharmacy', name: 'صيدلية', emoji: '💊', color: '#4A8B6F' },
-  { id: 'utilities', name: 'فواتير', emoji: '⚡', color: '#7A5C8A' },
-  { id: 'shopping', name: 'تسوق', emoji: '🛍️', color: '#B85FA0' },
-  { id: 'beauty', name: 'تجميل', emoji: '💄', color: '#C16B9D' },
-  { id: 'cash', name: 'سحب نقدي', emoji: '💵', color: '#6B6B6B' },
-  { id: 'transfers', name: 'تحويلات', emoji: '💸', color: '#8A6B4A' },
-  { id: 'other', name: 'أخرى', emoji: '📌', color: '#9B9B9B' },
-];
 
 const MERCHANT_RULES = {
   groceries: ['CARREFOUR','DANUBE','LULU','HYPERPANDA','PANDA','BINDAWOOD','BIN DAWOOD','TAMIMI','OTHAIM','SPAR','NESTO','MARKET','SUPERMARKET','كارفور','دانوب','لولو','هايبر','بندة','العثيم','التميمي','بن داود'],
-  restaurants: ['MCDONALDS','STARBUCKS','KFC','ALBAIK','AL BAIK','SHAWARMER','KUDU','DOMINOS','PIZZA HUT','HERFY','PAUL','COSTA','TIM HORTONS','DUNKIN','BURGER','RESTAURANT','CAFE','COFFEE','ماكدونالدز','ستاربكس','البيك','كودو','هرفي','دومينوز','بيتزا'],
-  delivery: ['JAHEZ','HUNGERSTATION','HUNGER STATION','TALABAT','NOON FOOD','KEETA','TOYOU','NINJA','MRSOOL','CAREEM FOOD','جاهز','هنقرستيشن','طلبات','مرسول','نون فود'],
   fuel: ['ALDREES','SADAFCO','SASCO','MUKAMALAH','WAFI','PETROL','FUEL','PETROMIN','الدريس','ساسكو','وقود'],
-  ride: ['UBER','CAREEM','BOLT','JEENY','أوبر','كريم'],
-  pharmacy: ['NAHDI','AL DAWAA','AL-DAWAA','PHARMACY','UNITED PHARM','صيدلية','النهدي','الدواء'],
-  utilities: ['STC','MOBILY','ZAIN','SEC','NWC','SAUDI ELECTRICITY','INTERNET','SADAD','اتصالات','موبايلي','زين','الكهرباء','المياه','سداد'],
-  shopping: ['NAMSHI','AMAZON','NOON','SHEIN','SEPHORA','IKEA','CENTREPOINT','ZARA','H&M','MAX','CITY MAX','HOME CENTRE','SACO','EXTRA','JARIR','نمشي','أمازون','نون','شي إن','ايكيا','زارا','جرير','اكسترا'],
-  beauty: ['BODY SHOP','BATH BODY','LOCCITANE','SALON','SPA','صالون','سبا'],
-  cash: ['ATM','CASH WITHDRAWAL','سحب نقدي','نقدي','صراف'],
-  transfers: ['TRANSFER','حوالة','تحويل'],
+  leisure: ['MCDONALDS','STARBUCKS','KFC','ALBAIK','AL BAIK','SHAWARMER','KUDU','DOMINOS','PIZZA HUT','HERFY','PAUL','COSTA','TIM HORTONS','DUNKIN','BURGER','RESTAURANT','CAFE','COFFEE','JAHEZ','HUNGERSTATION','HUNGER STATION','TALABAT','NOON FOOD','MRSOOL','TOYOU','KEETA','ماكدونالدز','ستاربكس','البيك','كودو','هرفي','جاهز','هنقرستيشن','طلبات','مرسول'],
+  internet: ['STC PAY','STC ','MOBILY','ZAIN','INTERNET','اتصالات','موبايلي','زين','اس تي سي'],
+  electricity: ['SEC','SAUDI ELECTRICITY','SADAD ELECTRICITY','الكهرباء','كهرباء'],
+  emergency: ['NAHDI','AL DAWAA','AL-DAWAA','PHARMACY','UNITED PHARM','صيدلية','النهدي','الدواء','HOSPITAL','CLINIC','مستشفى','عيادة'],
+  baby_supplies: ['BABYSHOP','MOTHERCARE','BABY','حفايظ','حفاضات','اطفال'],
+  car: ['CAR SERVICE','OIL CHANGE','TIRES','GARAGE','صيانة سيارة','اطارات','زيوت'],
 };
 
 const MONTHS_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
@@ -235,6 +254,13 @@ const todayISO = () => new Date().toISOString().slice(0, 10);
 const fmt = (n, cur = 'ريال') => Math.round(n).toLocaleString('en-US') + ' ' + cur;
 const fmtNoCur = (n) => Math.round(n).toLocaleString('en-US');
 
+function totalBudget() {
+  let s = 0;
+  const cats = state.config.categories || DEFAULT_CATEGORIES;
+  for (let i = 0; i < cats.length; i++) s += (cats[i].target || 0);
+  return s;
+}
+
 function cycleKey(resetDay, now) {
   now = now || new Date(); resetDay = resetDay || 1;
   const d = now.getDate();
@@ -249,22 +275,15 @@ function txnsInCycle(txns, ckey, resetDay) {
   const end = new Date(p[0], p[1], resetDay - 1, 23, 59, 59);
   return txns.filter(t => { const d = new Date(t.date + 'T12:00:00'); return d >= start && d <= end; });
 }
-function getCat(id) { for (let i = 0; i < CATEGORIES.length; i++) if (CATEGORIES[i].id === id) return CATEGORIES[i]; return CATEGORIES[CATEGORIES.length - 1]; }
+function getCat(id) {
+  const cats = state.config.categories || DEFAULT_CATEGORIES;
+  for (let i = 0; i < cats.length; i++) if (cats[i].id === id) return cats[i];
+  return cats[cats.length - 1] || { id: 'other', name: 'أخرى', emoji: '📌', color: '#9B9B9B', target: 0 };
+}
 function hashPin(pin) { let h = 5381; for (let i = 0; i < pin.length; i++) h = ((h << 5) + h + pin.charCodeAt(i)) | 0; return String(h); }
 
-// UTF-8 safe base64
-function strToB64(str) {
-  const bytes = new TextEncoder().encode(str);
-  let bin = '';
-  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
-  return btoa(bin);
-}
-function b64ToStr(b64) {
-  const bin = atob(b64.replace(/\s/g, ''));
-  const bytes = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  return new TextDecoder().decode(bytes);
-}
+function strToB64(str) { const bytes = new TextEncoder().encode(str); let bin = ''; for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]); return btoa(bin); }
+function b64ToStr(b64) { const bin = atob(b64.replace(/\s/g, '')); const bytes = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i); return new TextDecoder().decode(bytes); }
 
 // ═══════════════════════════════════════════════════════════════════════
 // محلل الرسائل البنكية
@@ -314,8 +333,8 @@ function parseSingleSMS(rawText) {
 }
 
 function categorizeByMerchant(merchant, isWithdrawal, isIncoming) {
-  if (isIncoming) return 'transfers';
-  if (isWithdrawal) return 'cash';
+  if (isIncoming) return 'other';
+  if (isWithdrawal) return 'other';
   const upper = merchant.toUpperCase();
   if (state.merchantRules[upper]) return state.merchantRules[upper];
   const cats = Object.keys(MERCHANT_RULES);
@@ -339,8 +358,10 @@ function parseMultipleSMS(text) {
 // ═══════════════════════════════════════════════════════════════════════
 async function classifyWithAI(merchant) {
   if (!state.config.aiApiKey) throw new Error('لا يوجد مفتاح API');
-  const validIds = CATEGORIES.map(c => c.id).join(', ');
-  const prompt = `صنّف هذا التاجر السعودي إلى إحدى الفئات: groceries (سوبرماركت), restaurants (مطاعم), delivery (توصيل طعام), fuel (بنزين), ride (مواصلات), pharmacy (صيدلية), utilities (فواتير), shopping (تسوق), beauty (تجميل), cash (سحب نقدي), transfers (تحويلات), other (لا يدخل في أي فئة).\n\nالتاجر: ${merchant}\n\nأجب بكلمة واحدة فقط هي id الفئة من (${validIds}).`;
+  const cats = state.config.categories || DEFAULT_CATEGORIES;
+  const catList = cats.map(c => `${c.id} (${c.name})`).join(', ');
+  const validIds = cats.map(c => c.id).join(', ');
+  const prompt = `صنّف هذا التاجر السعودي إلى إحدى الفئات: ${catList}.\n\nالتاجر: ${merchant}\n\nأجب بكلمة واحدة فقط هي id الفئة من (${validIds}).`;
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-api-key': state.config.aiApiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
@@ -349,7 +370,7 @@ async function classifyWithAI(merchant) {
   if (!res.ok) throw new Error('فشل الاتصال: ' + res.status);
   const data = await res.json();
   const txt = (data.content[0].text || '').trim().toLowerCase();
-  for (let i = 0; i < CATEGORIES.length; i++) if (txt.indexOf(CATEGORIES[i].id) !== -1) return CATEGORIES[i].id;
+  for (let i = 0; i < cats.length; i++) if (txt.indexOf(cats[i].id.toLowerCase()) !== -1) return cats[i].id;
   return 'other';
 }
 
@@ -374,24 +395,18 @@ async function classifyAllUnknown() {
 // ═══════════════════════════════════════════════════════════════════════
 // مزامنة GitHub
 // ═══════════════════════════════════════════════════════════════════════
-function ghIsConfigured() {
-  const c = state.config;
-  return !!(c.ghOwner && c.ghRepo && c.ghToken);
-}
+function ghIsConfigured() { const c = state.config; return !!(c.ghOwner && c.ghRepo && c.ghToken); }
 
 async function ghLoad() {
   const c = state.config;
   const url = `https://api.github.com/repos/${encodeURIComponent(c.ghOwner)}/${encodeURIComponent(c.ghRepo)}/contents/${encodeURIComponent(c.ghPath || 'data.json')}`;
-  const res = await fetch(url, {
-    headers: { 'Authorization': 'Bearer ' + c.ghToken, 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' },
-  });
+  const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + c.ghToken, 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' } });
   if (res.status === 404) return null;
   if (res.status === 401) throw new Error('UNAUTHORIZED');
   if (res.status === 403) throw new Error('FORBIDDEN');
   if (!res.ok) throw new Error('GH_LOAD_' + res.status);
   const result = await res.json();
-  const content = b64ToStr(result.content);
-  const data = JSON.parse(content);
+  const data = JSON.parse(b64ToStr(result.content));
   state.ghSha = result.sha;
   return data;
 }
@@ -399,25 +414,14 @@ async function ghLoad() {
 async function ghSave(data) {
   const c = state.config;
   const url = `https://api.github.com/repos/${encodeURIComponent(c.ghOwner)}/${encodeURIComponent(c.ghRepo)}/contents/${encodeURIComponent(c.ghPath || 'data.json')}`;
-  const jsonStr = JSON.stringify(data, null, 2);
-  const content = strToB64(jsonStr);
+  const content = strToB64(JSON.stringify(data, null, 2));
   const body = { message: 'Update ' + new Date().toISOString(), content };
   if (state.ghSha) body.sha = state.ghSha;
-  const res = await fetch(url, {
-    method: 'PUT',
-    headers: { 'Authorization': 'Bearer ' + c.ghToken, 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+  const res = await fetch(url, { method: 'PUT', headers: { 'Authorization': 'Bearer ' + c.ghToken, 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   if (res.status === 409 || res.status === 422) {
-    // SHA mismatch — pull then retry once
     state.ghSha = null;
     const remote = await ghLoad();
-    if (remote) {
-      // Use remote, then push
-      applyRemoteData(remote);
-      const merged = buildSyncPayload();
-      return await ghSave(merged);
-    }
+    if (remote) { applyRemoteData(remote); return await ghSave(buildSyncPayload()); }
   }
   if (res.status === 401) throw new Error('UNAUTHORIZED');
   if (!res.ok) throw new Error('GH_SAVE_' + res.status);
@@ -427,57 +431,34 @@ async function ghSave(data) {
 }
 
 function buildSyncPayload() {
-  // أهم: لا نرسل ghToken للسحابة
   const safeCfg = Object.assign({}, state.config);
   delete safeCfg.ghToken;
   delete safeCfg.aiApiKey;
-  return {
-    version: 1,
-    lastModified: new Date().toISOString(),
-    config: safeCfg,
-    txns: state.txns,
-    merchantRules: state.merchantRules,
-  };
+  return { version: 2, lastModified: new Date().toISOString(), config: safeCfg, txns: state.txns, merchantRules: state.merchantRules };
 }
 
 function applyRemoteData(remote) {
   if (remote.txns) state.txns = remote.txns;
   if (remote.merchantRules) state.merchantRules = remote.merchantRules;
   if (remote.config) {
-    // احتفظ بالمفاتيح المحلية (token, apiKey) ولا تكتب فوقهم
     const localKeys = { ghOwner: state.config.ghOwner, ghRepo: state.config.ghRepo, ghToken: state.config.ghToken, ghPath: state.config.ghPath, aiApiKey: state.config.aiApiKey };
     state.config = Object.assign({}, DEFAULT_CONFIG, remote.config, localKeys);
   }
   if (remote.lastModified) localStorage.setItem('last_modified', remote.lastModified);
-  // Save locally
   try { localStorage.setItem('txns', JSON.stringify(state.txns)); } catch (e) {}
   try { localStorage.setItem('merchant_rules', JSON.stringify(state.merchantRules)); } catch (e) {}
   try { localStorage.setItem('cfg', JSON.stringify(state.config)); } catch (e) {}
 }
 
 let syncTimeout = null;
-function queueSync() {
-  if (!ghIsConfigured()) return;
-  if (syncTimeout) clearTimeout(syncTimeout);
-  syncTimeout = setTimeout(performSync, 1500);
-}
-
+function queueSync() { if (!ghIsConfigured()) return; if (syncTimeout) clearTimeout(syncTimeout); syncTimeout = setTimeout(performSync, 1500); }
 async function performSync() {
   if (!ghIsConfigured()) return;
   state.syncStatus = 'syncing'; render();
-  try {
-    const payload = buildSyncPayload();
-    await ghSave(payload);
-    state.syncStatus = 'synced';
-    state.lastSyncTime = new Date().toISOString();
-    state.syncError = '';
-  } catch (err) {
-    state.syncStatus = 'error';
-    state.syncError = err.message || String(err);
-  }
+  try { await ghSave(buildSyncPayload()); state.syncStatus = 'synced'; state.lastSyncTime = new Date().toISOString(); state.syncError = ''; }
+  catch (err) { state.syncStatus = 'error'; state.syncError = err.message || String(err); }
   render();
 }
-
 async function initialSync() {
   if (!ghIsConfigured()) { state.syncStatus = 'idle'; return; }
   state.syncStatus = 'syncing'; render();
@@ -487,37 +468,22 @@ async function initialSync() {
       const localLM = localStorage.getItem('last_modified') || '';
       const remoteLM = remote.lastModified || '';
       const localEmpty = state.txns.length === 0 && Object.keys(state.merchantRules).length === 0;
-      if (remoteLM > localLM || localEmpty) {
-        // Remote newer (or local is empty) — use remote
-        applyRemoteData(remote);
-      } else if (localLM > remoteLM) {
-        // Local newer — push it
-        await ghSave(buildSyncPayload());
-      }
+      if (remoteLM > localLM || localEmpty) applyRemoteData(remote);
+      else if (localLM > remoteLM) await ghSave(buildSyncPayload());
     } else {
-      // No remote yet — push local up
-      if (state.txns.length > 0 || Object.keys(state.merchantRules).length > 0) {
-        await ghSave(buildSyncPayload());
-      }
+      if (state.txns.length > 0 || Object.keys(state.merchantRules).length > 0) await ghSave(buildSyncPayload());
     }
-    state.syncStatus = 'synced';
-    state.lastSyncTime = new Date().toISOString();
-    state.syncError = '';
-  } catch (err) {
-    state.syncStatus = 'error';
-    state.syncError = err.message || String(err);
-  }
+    state.syncStatus = 'synced'; state.lastSyncTime = new Date().toISOString(); state.syncError = '';
+  } catch (err) { state.syncStatus = 'error'; state.syncError = err.message || String(err); }
   render();
 }
 
 async function testGithubConnection() {
   const c = state.config;
   const url = `https://api.github.com/repos/${encodeURIComponent(c.ghOwner)}/${encodeURIComponent(c.ghRepo)}`;
-  const res = await fetch(url, {
-    headers: { 'Authorization': 'Bearer ' + c.ghToken, 'Accept': 'application/vnd.github+json' },
-  });
-  if (res.status === 401) throw new Error('المفتاح غير صحيح أو منتهي');
-  if (res.status === 404) throw new Error('المستودع غير موجود أو المفتاح ما عنده صلاحية وصول');
+  const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + c.ghToken, 'Accept': 'application/vnd.github+json' } });
+  if (res.status === 401) throw new Error('المفتاح غير صحيح');
+  if (res.status === 404) throw new Error('المستودع غير موجود');
   if (!res.ok) throw new Error('خطأ: ' + res.status);
   const repo = await res.json();
   return { name: repo.full_name, private: repo.private };
@@ -535,26 +501,23 @@ const state = {
   filterCat: 'all', pinAttemptError: false,
   aiClassifying: false,
   syncStatus: 'idle', lastSyncTime: null, syncError: '', ghSha: null,
+  manualTxn: null,
 };
 
 let charts = [];
 
 function loadState() {
-  try { const c = localStorage.getItem('cfg'); state.config = c ? Object.assign({}, DEFAULT_CONFIG, JSON.parse(c)) : DEFAULT_CONFIG; } catch (e) { state.config = DEFAULT_CONFIG; }
+  try { const c = localStorage.getItem('cfg'); state.config = c ? Object.assign({}, DEFAULT_CONFIG, JSON.parse(c)) : DEFAULT_CONFIG; if (!state.config.categories || state.config.categories.length === 0) state.config.categories = DEFAULT_CATEGORIES; } catch (e) { state.config = DEFAULT_CONFIG; }
   try { const t = localStorage.getItem('txns'); state.txns = t ? JSON.parse(t) : []; } catch (e) { state.txns = []; }
   try { const r = localStorage.getItem('merchant_rules'); state.merchantRules = r ? JSON.parse(r) : {}; } catch (e) { state.merchantRules = {}; }
   state.pinHash = localStorage.getItem('pin_hash');
   state.unlocked = !state.pinHash;
 }
 
-function markChanged() {
-  localStorage.setItem('last_modified', new Date().toISOString());
-  queueSync();
-}
+function markChanged() { localStorage.setItem('last_modified', new Date().toISOString()); queueSync(); }
 function saveTxns() { try { localStorage.setItem('txns', JSON.stringify(state.txns)); } catch (e) {} markChanged(); }
 function saveConfig() { try { localStorage.setItem('cfg', JSON.stringify(state.config)); } catch (e) {} markChanged(); }
 function saveMerchantRules() { try { localStorage.setItem('merchant_rules', JSON.stringify(state.merchantRules)); } catch (e) {} markChanged(); }
-
 function setState(patch) { Object.assign(state, patch); render(); }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -567,9 +530,11 @@ function render() {
   let html = '';
   if (!state.unlocked && state.pinHash) html = pinGateView();
   else if (state.view === 'settings') html = settingsView();
+  else if (state.view === 'categories') html = categoriesEditView();
   else if (state.view === 'github-guide') html = githubGuideView();
   else if (state.view === 'guide') html = guideView();
   else if (state.editingTxn) html = editTxnView();
+  else if (state.manualTxn) html = manualTxnView();
   else {
     html = '<div class="app">';
     if (state.tab === 'dashboard') html += dashboardView();
@@ -577,6 +542,7 @@ function render() {
     if (state.tab === 'analytics') html += analyticsView();
     if (state.tab === 'transactions') html += transactionsView();
     html += bottomNav();
+    if (state.tab === 'dashboard') html += `<button class="fab" data-action="open-manual">+ إضافة عملية يدوية</button>`;
     html += '</div>';
   }
   root.innerHTML = html;
@@ -586,15 +552,12 @@ function render() {
   if (af) af.focus();
 }
 
-// ═══════════════════════════════════════════════════════════════════════
-// مؤشر المزامنة
-// ═══════════════════════════════════════════════════════════════════════
 function syncPill() {
   if (!ghIsConfigured()) return '';
   const s = state.syncStatus;
   if (s === 'syncing') return `<div class="sync-pill syncing"><span class="spinner"></span> يحفظ</div>`;
   if (s === 'synced') return `<div class="sync-pill synced">☁ ✓</div>`;
-  if (s === 'error') return `<button class="sync-pill error" data-action="manual-sync" title="${esc(state.syncError)}">⚠️ أعد المحاولة</button>`;
+  if (s === 'error') return `<button class="sync-pill error" data-action="manual-sync" title="${esc(state.syncError)}">⚠️ أعد</button>`;
   return `<div class="sync-pill idle">☁</div>`;
 }
 
@@ -616,12 +579,13 @@ function pinGateView() {
 
 function dashboardView() {
   const cfg = state.config;
+  const total = totalBudget();
   const ckey = cycleKey(cfg.resetDay);
   const cycleTxns = txnsInCycle(state.txns, ckey, cfg.resetDay);
   const spendingTxns = cycleTxns.filter(t => t.type !== 'income');
   const spent = spendingTxns.reduce((s, t) => s + t.amount, 0);
-  const remaining = cfg.monthlyBudget - spent;
-  const progress = (spent / cfg.monthlyBudget) * 100;
+  const remaining = total - spent;
+  const progress = total > 0 ? (spent / total) * 100 : 0;
 
   const today = new Date();
   const parts = ckey.split('-').map(Number);
@@ -631,16 +595,16 @@ function dashboardView() {
   const daysElapsed = Math.min(daysTotal, Math.max(1, Math.round((today - startD) / 86400000) + 1));
   const daysLeft = Math.max(0, daysTotal - daysElapsed);
   const timePct = (daysElapsed / daysTotal) * 100;
-  const safeDaily = daysLeft > 0 ? Math.max(0, (remaining - cfg.savingsGoal)) / daysLeft : 0;
+  const safeDaily = daysLeft > 0 ? Math.max(0, remaining) / daysLeft : 0;
 
+  // مقارنة الشهر السابق
   const prevD = new Date(parts[0], parts[1] - 2, 1);
   const prevCkey = prevD.getFullYear() + '-' + String(prevD.getMonth() + 1).padStart(2, '0');
-  const prevTxns = txnsInCycle(state.txns, prevCkey, cfg.resetDay);
-  const prevSpent = prevTxns.filter(t => t.type !== 'income').reduce((s, t) => s + t.amount, 0);
+  const prevSpent = txnsInCycle(state.txns, prevCkey, cfg.resetDay).filter(t => t.type !== 'income').reduce((s, t) => s + t.amount, 0);
 
-  const catTotals = {};
-  for (let i = 0; i < spendingTxns.length; i++) { const t = spendingTxns[i]; catTotals[t.category] = (catTotals[t.category] || 0) + t.amount; }
-  const topCatEntry = Object.entries(catTotals).sort((a, b) => b[1] - a[1])[0];
+  // حساب المصروف لكل فئة
+  const byCat = {};
+  for (let i = 0; i < spendingTxns.length; i++) { const t = spendingTxns[i]; byCat[t.category] = (byCat[t.category] || 0) + t.amount; }
 
   const overBudget = remaining < 0;
   const tightPace = progress > timePct + 8;
@@ -648,8 +612,11 @@ function dashboardView() {
   const statusIcon = overBudget ? '⚠️' : (tightPace ? '📉' : '✅');
   const statusColor = overBudget ? 'var(--danger)' : (tightPace ? 'var(--warn)' : 'var(--accent)');
   const statusTitle = overBudget ? 'تجاوزتي الميزانية' : (tightPace ? 'مسرعة شوي' : 'كل شي تمام');
-  const statusMsg = overBudget ? 'تجاوزتي بـ ' + fmt(-remaining, cfg.currency) + '. خفّفي لباقي الشهر.'
-    : (daysLeft > 0 ? 'تقدرين تصرفين ' + fmt(safeDaily, cfg.currency) + ' يومياً للباقي وتحققين هدف التوفير.' : 'الدورة انتهت.');
+  const statusMsg = overBudget ? 'تجاوزتي بـ ' + fmt(-remaining, cfg.currency)
+    : (daysLeft > 0 ? 'تقدرين تصرفين ' + fmt(safeDaily, cfg.currency) + ' يومياً للباقي.' : 'الدورة انتهت.');
+
+  const cats = cfg.categories || DEFAULT_CATEGORIES;
+  const activeCats = cats.filter(c => c.target > 0 || (byCat[c.id] > 0));
 
   return `
     <header class="app-header">
@@ -667,7 +634,7 @@ function dashboardView() {
       <div class="card card-dark">
         <div class="hero-label">💼 المتبقي من الميزانية</div>
         <div class="hero-amount num" style="color: ${overBudget ? '#FF9B8B' : 'white'};">${fmtNoCur(Math.max(0, remaining))}</div>
-        <div class="hero-sub">${esc(cfg.currency)} من ${esc(fmt(cfg.monthlyBudget, cfg.currency))}</div>
+        <div class="hero-sub">${esc(cfg.currency)} من ${esc(fmt(total, cfg.currency))}</div>
         <div class="bar-pair">
           <div>
             <div class="bar-pair-label"><span>مرّ من الشهر</span><span class="num">${daysElapsed} / ${daysTotal} يوم</span></div>
@@ -699,21 +666,43 @@ function dashboardView() {
       </div>
     </section>
 
-    ${topCatEntry ? `
-      <section class="mx-5 mt-3">
-        <div class="card card-tight">
-          <div class="stat-label mb-2">أكثر فئة صرفتي عليها</div>
-          <div class="row">
-            <div style="font-size:28px;">${getCat(topCatEntry[0]).emoji}</div>
-            <div class="flex-1">
-              <div style="font-weight:700; font-size:14px;">${esc(getCat(topCatEntry[0]).name)}</div>
-              <div class="num" style="font-size:13px; color:${getCat(topCatEntry[0]).color};">${esc(fmt(topCatEntry[1], cfg.currency))}</div>
-            </div>
-            <div class="num" style="font-size:11px; color:var(--ink-mute);">${Math.round((topCatEntry[1] / Math.max(1, spent)) * 100)}%</div>
-          </div>
-        </div>
-      </section>
-    ` : ''}
+    <section class="mx-5 mt-4">
+      <div class="row" style="justify-content:space-between; margin-bottom:8px; padding:0 4px;">
+        <div style="font-weight:800; font-size:14px;">الفئات والميزانيات</div>
+        <button data-action="open-categories" style="font-size:11px; color:var(--accent); text-decoration:underline;">تعديل</button>
+      </div>
+      <div class="card" style="padding:0; overflow:hidden;">
+        ${activeCats.map(c => {
+          const s = byCat[c.id] || 0;
+          const pct = c.target > 0 ? (s / c.target) * 100 : 0;
+          const over = c.target > 0 && s > c.target;
+          const near = !over && pct >= 80;
+          const barColor = over ? 'var(--danger)' : (near ? 'var(--warn)' : c.color);
+          const targetText = c.target > 0 ? `${fmtNoCur(c.target)}` : '—';
+          return `
+            <button class="cat-row" data-action="filter-by-cat" data-cat="${c.id}" style="display:block; width:100%; text-align:right; background:transparent; border:none;">
+              <div class="cat-row-top">
+                <div class="cat-row-em">${c.emoji}</div>
+                <div class="cat-row-name truncate">${esc(c.name)}</div>
+                <div class="cat-row-amount">
+                  <span class="spent num" style="color:${over ? 'var(--danger)' : 'var(--ink)'};">${fmtNoCur(s)}</span>
+                  <span class="target num"> / ${targetText}</span>
+                </div>
+              </div>
+              <div class="cat-row-bar">
+                <div class="bar-track thin">
+                  <div class="bar-fill" style="width:${Math.min(100, pct)}%; background:${barColor};"></div>
+                </div>
+              </div>
+              <div class="cat-row-status">
+                ${c.target > 0 ? `<span>${Math.round(pct)}%</span>` : '<span></span>'}
+                ${over ? `<span style="color:var(--danger); font-weight:700;">تجاوزت بـ ${fmtNoCur(s - c.target)}</span>` : (c.target > 0 ? `<span class="num">يبقى ${fmtNoCur(Math.max(0, c.target - s))}</span>` : '')}
+              </div>
+            </button>
+          `;
+        }).join('')}
+      </div>
+    </section>
 
     ${prevSpent > 0 ? `
       <section class="mx-5 mt-3">
@@ -748,9 +737,7 @@ function dashboardView() {
             <div style="font-size:24px;">☁</div>
             <div style="font-weight:800; font-size:14px;">فعّلي المزامنة السحابية</div>
           </div>
-          <div style="font-size:11px; color:var(--ink-soft); line-height:1.6; margin-bottom:12px;">
-            بياناتك حالياً في هذا الجهاز فقط. فعّلي GitHub Sync عشان تتزامن تلقائياً بين كل أجهزتك.
-          </div>
+          <div style="font-size:11px; color:var(--ink-soft); line-height:1.6; margin-bottom:12px;">بياناتك حالياً في هذا الجهاز فقط. فعّلي GitHub Sync للمزامنة بين أجهزتك.</div>
           <button class="btn btn-gh" style="width:100%;" data-action="open-github-guide">ابدأي الإعداد</button>
         </div>
       </section>
@@ -771,7 +758,10 @@ function pasteView() {
       <div class="label-small mb-2">انسخي رسائل البنك من تطبيق الرسائل وألصقي هنا</div>
       <textarea id="smsTextarea" class="input" dir="auto" placeholder="مثال:\nشراء/POS\nبطاقة:****1234\nبمبلغ:250.00 ر.س\nمن:CARREFOUR HYPER\nفي:15-06-26\n\n(يمكنك لصق عدة رسائل دفعة واحدة)"></textarea>
       ${state.parseError ? `<div class="mt-2" style="background:var(--danger-soft); color:var(--danger); padding:10px; border-radius:8px; font-size:12px;">${esc(state.parseError)}</div>` : ''}
-      ${!hasParsed ? `<button class="btn btn-primary btn-block mt-3" data-action="parse-sms">حلّل الرسائل</button>` : `
+      ${!hasParsed ? `
+        <button class="btn btn-primary btn-block mt-3" data-action="parse-sms">حلّل الرسائل</button>
+        <div class="hint mt-3">💡 للعمليات اللي ما تجيك في رسائل (مثل تحويل بنكي للإيجار)، استخدمي زر "+ إضافة عملية يدوية" في الصفحة الرئيسية.</div>
+      ` : `
         <div class="mt-4" style="display:flex; justify-content:space-between; padding:0 4px; font-size:11px; color:var(--ink-mute);">
           <span>وجدت ${state.parsedSMS.length} عملية</span>
           <button data-action="clear-parsed" style="text-decoration:underline;">إعادة</button>
@@ -788,6 +778,7 @@ function pasteView() {
 function parsedRow(txn, i) {
   const cat = getCat(txn.category);
   const isLearned = state.merchantRules[txn.merchant.toUpperCase()];
+  const cats = state.config.categories || DEFAULT_CATEGORIES;
   return `
     <div class="card card-tight">
       <div class="row">
@@ -796,17 +787,49 @@ function parsedRow(txn, i) {
           <div style="font-size:13px; font-weight:700;" class="truncate">${esc(txn.merchant)} ${isLearned ? '<span class="ai-badge">✓ متعلَّم</span>' : ''}</div>
           <div style="font-size:11px; color:var(--ink-mute);">${esc(cat.name)} · ${esc(txn.date)}</div>
         </div>
-        <div class="num" style="font-size:13px; font-weight:700; color:${txn.type === 'income' ? 'var(--ok)' : 'var(--ink)'};">${txn.type === 'income' ? '+' : ''}${esc(fmt(txn.amount))}</div>
+        <div class="num" style="font-size:13px; font-weight:700;">${esc(fmt(txn.amount))}</div>
         <button class="icon-btn" data-action="toggle-parsed-edit" data-idx="${i}">✏️</button>
         <button class="icon-btn" data-action="remove-parsed" data-idx="${i}">🗑️</button>
       </div>
       ${state['parsedEdit_' + i] ? `
         <div style="margin-top:12px; padding-top:12px; border-top:1px solid var(--line);">
-          <div class="cat-grid">
-            ${CATEGORIES.map(c => `<button class="cat-btn ${txn.category === c.id ? 'active' : ''}" data-action="set-parsed-cat" data-idx="${i}" data-cat="${c.id}"><div class="em">${c.emoji}</div><div class="nm">${esc(c.name)}</div></button>`).join('')}
-          </div>
+          <div class="cat-grid">${cats.map(c => `<button class="cat-btn ${txn.category === c.id ? 'active' : ''}" data-action="set-parsed-cat" data-idx="${i}" data-cat="${c.id}"><div class="em">${c.emoji}</div><div class="nm">${esc(c.name)}</div></button>`).join('')}</div>
         </div>
       ` : ''}
+    </div>
+  `;
+}
+
+function manualTxnView() {
+  const m = state.manualTxn;
+  const cats = state.config.categories || DEFAULT_CATEGORIES;
+  return `
+    <div class="app">
+      <header class="app-header">
+        <div class="row gap-2"><button class="icon-btn" data-action="cancel-manual">→</button><h1>إضافة عملية يدوية</h1></div>
+        <button class="btn btn-dark" data-action="save-manual">✓ حفظ</button>
+      </header>
+      <div class="mx-5">
+        <div class="hint mb-3">للعمليات اللي ما تجيك في رسائل البنك (إيجار، رواتب، إلخ).</div>
+        <div class="card space-y-4">
+          <div>
+            <label class="label-small">الوصف</label>
+            <input id="manMerchant" type="text" class="input mt-2" dir="auto" placeholder="مثلاً: إيجار يونيو" value="${esc(m.merchant)}" />
+          </div>
+          <div>
+            <label class="label-small">المبلغ</label>
+            <input id="manAmount" type="number" class="input-big mt-2" placeholder="0" value="${m.amount || ''}" />
+          </div>
+          <div>
+            <label class="label-small">التاريخ</label>
+            <input id="manDate" type="date" class="input mt-2" value="${esc(m.date)}" />
+          </div>
+          <div>
+            <label class="label-small mb-2">الفئة</label>
+            <div class="cat-grid mt-2">${cats.map(c => `<button class="cat-btn ${m.category === c.id ? 'active' : ''}" data-action="set-manual-cat" data-cat="${c.id}"><div class="em">${c.emoji}</div><div class="nm">${esc(c.name)}</div></button>`).join('')}</div>
+          </div>
+        </div>
+      </div>
     </div>
   `;
 }
@@ -883,7 +906,7 @@ function transactionsView() {
             <button class="list-item" data-action="edit-txn" data-id="${t.id}">
               <div class="list-item-em">${cat.emoji}</div>
               <div class="flex-1"><div class="list-item-title truncate">${esc(t.merchant)}</div><div class="list-item-sub">${esc(cat.name)} · ${esc(t.date)}</div></div>
-              <div class="list-item-amount num" style="color:${t.type === 'income' ? 'var(--ok)' : 'var(--ink)'};">${t.type === 'income' ? '+' : ''}${esc(fmt(t.amount, cfg.currency))}</div>
+              <div class="list-item-amount num">${esc(fmt(t.amount, cfg.currency))}</div>
             </button>`; }).join('')}
         </div>
       `}
@@ -893,6 +916,7 @@ function transactionsView() {
 
 function editTxnView() {
   const t = state.editingTxn;
+  const cats = state.config.categories || DEFAULT_CATEGORIES;
   return `
     <div class="app">
       <header class="app-header"><div class="row gap-2"><button class="icon-btn" data-action="cancel-edit">→</button><h1>تعديل العملية</h1></div><button class="btn btn-dark" data-action="save-edit">✓ حفظ</button></header>
@@ -901,10 +925,41 @@ function editTxnView() {
         <div><label class="label-small">المبلغ</label><input id="editAmount" type="number" class="input-big mt-2" value="${t.amount}" /></div>
         <div><label class="label-small">التاريخ</label><input id="editDate" type="date" class="input mt-2" value="${esc(t.date)}" /></div>
         <div><label class="label-small mb-2">التصنيف</label>
-          <div class="cat-grid mt-2">${CATEGORIES.map(c => `<button class="cat-btn ${t.category === c.id ? 'active' : ''}" data-action="set-edit-cat" data-cat="${c.id}"><div class="em">${c.emoji}</div><div class="nm">${esc(c.name)}</div></button>`).join('')}</div>
+          <div class="cat-grid mt-2">${cats.map(c => `<button class="cat-btn ${t.category === c.id ? 'active' : ''}" data-action="set-edit-cat" data-cat="${c.id}"><div class="em">${c.emoji}</div><div class="nm">${esc(c.name)}</div></button>`).join('')}</div>
           <div class="hint mt-2">💡 لو غيّرتي التصنيف، الموقع راح يحفظه ويستخدمه تلقائياً لنفس التاجر في المستقبل.</div>
         </div>
       </div><div class="text-center mt-4"><button data-action="delete-txn" style="color:var(--danger); font-size:13px;">حذف العملية</button></div></div>
+    </div>
+  `;
+}
+
+function categoriesEditView() {
+  const cats = state.config.categories || DEFAULT_CATEGORIES;
+  const total = cats.reduce((s, c) => s + (c.target || 0), 0);
+  return `
+    <div class="app">
+      <header class="app-header">
+        <div class="row gap-2"><button class="icon-btn" data-action="close-view">→</button><h1>الفئات والميزانيات</h1></div>
+        <button class="btn btn-dark" data-action="save-categories">✓ حفظ</button>
+      </header>
+      <div class="mx-5">
+        <div class="hint mb-3">عدّلي ميزانية كل فئة. ضعي ٠ لإخفاء الفئة من الواجهة الرئيسية.</div>
+        <div class="card">
+          <div class="row" style="justify-content:space-between; margin-bottom:8px;">
+            <div style="font-size:13px; font-weight:700;">المجموع</div>
+            <div class="display num" id="catsTotal" style="font-size:18px; color:var(--accent);">${fmtNoCur(total)} ريال</div>
+          </div>
+          <div style="margin-top:8px;">
+            ${cats.map(c => `
+              <div class="cat-target-row">
+                <div class="em">${c.emoji}</div>
+                <div class="nm">${esc(c.name)}</div>
+                <input type="number" class="cat-target-input" data-cat-id="${c.id}" value="${c.target || 0}" min="0" />
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
     </div>
   `;
 }
@@ -914,6 +969,7 @@ function settingsView() {
   const learnedCount = Object.keys(state.merchantRules).length;
   const ghConfigured = ghIsConfigured();
   const lastSync = state.lastSyncTime ? new Date(state.lastSyncTime).toLocaleString('ar-SA') : '—';
+  const total = totalBudget();
   return `
     <div class="app">
       <header class="app-header">
@@ -921,59 +977,48 @@ function settingsView() {
         <button class="btn btn-dark" data-action="save-settings">✓ حفظ</button>
       </header>
       <div class="mx-5 space-y-3">
-        <div class="card space-y-5">
-          <div><label class="label-small">الميزانية الشهرية</label><input id="setBudget" type="number" class="input-big mt-2" value="${cfg.monthlyBudget}" /></div>
-          <div><label class="label-small" style="color:var(--accent);">هدف التوفير</label><input id="setSavings" type="number" class="input-big mt-2" value="${cfg.savingsGoal}" /></div>
-          <div><label class="label-small">يوم وصول التحويل</label><input id="setResetDay" type="number" min="1" max="28" class="input-big mt-2" value="${cfg.resetDay}" /></div>
+
+        <div class="card">
+          <div class="row" style="justify-content:space-between; margin-bottom:12px;">
+            <div>
+              <div style="font-weight:800; font-size:15px;">الفئات والميزانيات</div>
+              <div style="font-size:11px; color:var(--ink-mute); margin-top:2px;">المجموع: <span class="num" style="color:var(--accent); font-weight:700;">${fmtNoCur(total)} ${esc(cfg.currency)}</span></div>
+            </div>
+            <button class="btn btn-soft" data-action="open-categories">تعديل</button>
+          </div>
+          <div style="font-size:11px; color:var(--ink-soft); line-height:1.6;">
+            عندك ${(cfg.categories || DEFAULT_CATEGORIES).length} فئة. الميزانية الإجمالية تتحسب تلقائياً من مجموع الفئات.
+          </div>
+        </div>
+
+        <div class="card space-y-4">
+          <div><label class="label-small">يوم وصول التحويل من الشهر</label><input id="setResetDay" type="number" min="1" max="28" class="input-big mt-2" value="${cfg.resetDay}" /></div>
+          <div><label class="label-small">العملة</label><input id="setCurrency" type="text" class="input mt-2" value="${esc(cfg.currency)}" /></div>
         </div>
 
         <div class="card card-gh">
           <div class="toggle-row mb-3">
             <div>
-              <div style="font-weight:800; font-size:15px; color:var(--gh);">☁ المزامنة السحابية (GitHub)</div>
-              <div style="font-size:11px; color:var(--ink-soft); margin-top:2px;">${ghConfigured ? `<span class="num">✓ ${esc(cfg.ghOwner)}/${esc(cfg.ghRepo)}</span>` : 'نسخة احتياطية ومزامنة بين أجهزتك'}</div>
+              <div style="font-weight:800; font-size:15px; color:var(--gh);">☁ المزامنة السحابية</div>
+              <div style="font-size:11px; color:var(--ink-soft); margin-top:2px;">${ghConfigured ? `<span class="num">✓ ${esc(cfg.ghOwner)}/${esc(cfg.ghRepo)}</span>` : 'مزامنة بين أجهزتك'}</div>
             </div>
           </div>
-
-          ${!ghConfigured ? `
-            <button class="btn btn-gh" style="width:100%;" data-action="open-github-guide">📖 ابدأي الإعداد (٥ دقائق)</button>
-          ` : ''}
-
+          ${!ghConfigured ? `<button class="btn btn-gh" style="width:100%;" data-action="open-github-guide">📖 ابدأي الإعداد</button>` : ''}
           <div style="margin-top:12px;" class="space-y-3">
-            <div>
-              <label class="label-small">اسم مستخدم GitHub</label>
-              <input id="setGhOwner" type="text" class="input mt-2" placeholder="username" style="direction:ltr;" value="${esc(cfg.ghOwner)}" />
-            </div>
-            <div>
-              <label class="label-small">اسم المستودع (Repository)</label>
-              <input id="setGhRepo" type="text" class="input mt-2" placeholder="budget-data" style="direction:ltr;" value="${esc(cfg.ghRepo)}" />
-            </div>
-            <div>
-              <label class="label-small">مفتاح الوصول (Personal Access Token)</label>
-              <input id="setGhToken" type="password" class="input mt-2" placeholder="github_pat_..." style="direction:ltr; font-family:monospace; font-size:11px;" value="${esc(cfg.ghToken)}" />
-            </div>
+            <div><label class="label-small">اسم مستخدم GitHub</label><input id="setGhOwner" type="text" class="input mt-2" placeholder="username" style="direction:ltr;" value="${esc(cfg.ghOwner)}" /></div>
+            <div><label class="label-small">اسم المستودع</label><input id="setGhRepo" type="text" class="input mt-2" placeholder="budget-data" style="direction:ltr;" value="${esc(cfg.ghRepo)}" /></div>
+            <div><label class="label-small">مفتاح الوصول</label><input id="setGhToken" type="password" class="input mt-2" placeholder="github_pat_..." style="direction:ltr; font-family:monospace; font-size:11px;" value="${esc(cfg.ghToken)}" /></div>
             ${ghConfigured ? `
-              <div style="font-size:11px; color:var(--ink-soft); padding:8px; background:var(--surface-2); border-radius:8px;">
-                <div>آخر مزامنة: <span class="num">${esc(lastSync)}</span></div>
-                ${state.syncError ? `<div style="color:var(--danger); margin-top:4px;">خطأ: ${esc(state.syncError)}</div>` : ''}
-              </div>
-              <div class="row gap-2">
-                <button class="btn btn-gh flex-1" data-action="test-github">🧪 جرّبي الاتصال</button>
-                <button class="btn btn-soft flex-1" data-action="manual-sync">🔄 مزامنة الآن</button>
-              </div>
+              <div style="font-size:11px; color:var(--ink-soft); padding:8px; background:var(--surface-2); border-radius:8px;">آخر مزامنة: <span class="num">${esc(lastSync)}</span>${state.syncError ? `<div style="color:var(--danger); margin-top:4px;">خطأ: ${esc(state.syncError)}</div>` : ''}</div>
+              <div class="row gap-2"><button class="btn btn-gh flex-1" data-action="test-github">🧪 جرّبي</button><button class="btn btn-soft flex-1" data-action="manual-sync">🔄 مزامنة</button></div>
               <button data-action="open-github-guide" style="font-size:11px; color:var(--gh); text-decoration:underline; display:block; text-align:center; width:100%;">شوفي خطوات الإعداد مرة ثانية</button>
-            ` : `
-              <button class="btn btn-gh" style="width:100%;" data-action="save-github">حفظ وبدء المزامنة</button>
-            `}
+            ` : `<button class="btn btn-gh" style="width:100%;" data-action="save-github">حفظ وبدء المزامنة</button>`}
           </div>
         </div>
 
         <div class="card" style="border:1.5px solid var(--ai); background: linear-gradient(180deg, var(--ai-soft) 0%, var(--surface) 60%);">
           <div class="toggle-row mb-3">
-            <div>
-              <div style="font-weight:800; font-size:15px; color:var(--ai);">🤖 الذكاء الاصطناعي</div>
-              <div style="font-size:11px; color:var(--ink-soft); margin-top:2px;">تصنيف دقيق لأي تاجر</div>
-            </div>
+            <div><div style="font-weight:800; font-size:15px; color:var(--ai);">🤖 الذكاء الاصطناعي</div><div style="font-size:11px; color:var(--ink-soft); margin-top:2px;">تصنيف دقيق لأي تاجر</div></div>
             <div class="switch ${cfg.aiEnabled ? 'on' : ''}" data-action="toggle-ai"></div>
           </div>
           ${cfg.aiEnabled ? `
@@ -981,14 +1026,14 @@ function settingsView() {
               <label class="label-small">مفتاح Anthropic API</label>
               <input id="setApiKey" type="password" class="input mt-2" placeholder="sk-ant-..." value="${esc(cfg.aiApiKey)}" style="direction:ltr; font-family:monospace; font-size:11px;" />
               <div class="hint mt-2">احصلي على مفتاح من <strong>console.anthropic.com</strong></div>
-              ${cfg.aiApiKey ? `<button class="btn btn-ai mt-2" data-action="test-ai" style="width:100%;">🧪 جرّبي الاتصال</button>` : ''}
+              ${cfg.aiApiKey ? `<button class="btn btn-ai mt-2" data-action="test-ai" style="width:100%;">🧪 جرّبي</button>` : ''}
             </div>
           ` : `<div class="hint">يحتاج حساب مدفوع في Anthropic. التعلّم الذاتي يكفي لأغلب الناس.</div>`}
         </div>
 
         <div class="card">
           <div style="font-weight:700; margin-bottom:4px;">📚 التعلّم الذاتي</div>
-          <div style="font-size:12px; color:var(--ink-soft); line-height:1.6;">التجار المتعلَّمين: <strong>${learnedCount}</strong>${learnedCount > 0 ? `<button data-action="clear-rules" style="display:block; color:var(--danger); font-size:11px; margin-top:8px;">مسح كل القواعد المتعلَّمة</button>` : ''}</div>
+          <div style="font-size:12px; color:var(--ink-soft); line-height:1.6;">التجار المتعلَّمين: <strong>${learnedCount}</strong>${learnedCount > 0 ? `<button data-action="clear-rules" style="display:block; color:var(--danger); font-size:11px; margin-top:8px;">مسح كل القواعد</button>` : ''}</div>
         </div>
 
         <div class="card">
@@ -1015,99 +1060,33 @@ function settingsView() {
 function githubGuideView() {
   return `
     <div class="app">
-      <header class="app-header">
-        <div class="row gap-2"><button class="icon-btn" data-action="close-view">→</button><h1>إعداد المزامنة</h1></div>
-      </header>
+      <header class="app-header"><div class="row gap-2"><button class="icon-btn" data-action="close-view">→</button><h1>إعداد المزامنة</h1></div></header>
       <div class="mx-5 space-y-3">
         <div class="card card-gh">
-          <div style="font-weight:800; font-size:16px; margin-bottom:8px;">☁ خطوات الإعداد (مرة واحدة فقط)</div>
-          <div style="font-size:12px; color:var(--ink-soft); line-height:1.7;">
-            راح تنشئين مستودع خاص (Private) في GitHub لحفظ بياناتك، ومفتاح وصول يسمح للموقع يقرأ ويكتب فيه. كل شي مجاني.
-          </div>
+          <div style="font-weight:800; font-size:16px; margin-bottom:8px;">☁ خطوات الإعداد (مرة واحدة)</div>
+          <div style="font-size:12px; color:var(--ink-soft); line-height:1.7;">راح تنشئين مستودع خاص (Private) في GitHub لحفظ بياناتك، ومفتاح وصول. كل شي مجاني.</div>
         </div>
-
-        <div class="guide-step">
-          <div class="row" style="align-items:flex-start;">
-            <div class="guide-step-num">1</div>
-            <div class="flex-1">
-              <div style="font-weight:700; font-size:14px;">أنشئي مستودع خاص لبياناتك</div>
-              <div style="font-size:12px; color:var(--ink-soft); line-height:1.7; margin-top:6px;">
-                ادخلي <a href="https://github.com/new" target="_blank" style="color:var(--gh); text-decoration:underline;">github.com/new</a><br>
-                • Repository name: <strong>budget-data</strong> (أو أي اسم تبينه)<br>
-                • اختاري <strong>Private</strong> ⚠️ مهم — مو Public<br>
-                • علّمي على <strong>Add a README file</strong> في الأسفل<br>
-                • اضغطي Create repository
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="guide-step">
-          <div class="row" style="align-items:flex-start;">
-            <div class="guide-step-num">2</div>
-            <div class="flex-1">
-              <div style="font-weight:700; font-size:14px;">أنشئي مفتاح الوصول</div>
-              <div style="font-size:12px; color:var(--ink-soft); line-height:1.7; margin-top:6px;">
-                ادخلي <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" style="color:var(--gh); text-decoration:underline;">github.com/settings/personal-access-tokens/new</a><br>
-                • Token name: <strong>Budget App</strong><br>
-                • Expiration: اختاري <strong>No expiration</strong> أو سنة كاملة<br>
-                • Repository access: اختاري <strong>Only select repositories</strong> ثم اختاري <strong>budget-data</strong>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="guide-step">
-          <div class="row" style="align-items:flex-start;">
-            <div class="guide-step-num">3</div>
-            <div class="flex-1">
-              <div style="font-weight:700; font-size:14px;">أعطي الصلاحيات اللازمة</div>
-              <div style="font-size:12px; color:var(--ink-soft); line-height:1.7; margin-top:6px;">
-                في نفس الصفحة، نزّلي إلى <strong>Repository permissions</strong> واضغطي السهم بجنبها للتوسعة<br>
-                ابحثي عن <strong>Contents</strong> وغيّري Access إلى <strong>Read and write</strong><br>
-                نزّلي تحت واضغطي <strong>Generate token</strong>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="guide-step">
-          <div class="row" style="align-items:flex-start;">
-            <div class="guide-step-num">4</div>
-            <div class="flex-1">
-              <div style="font-weight:700; font-size:14px;">انسخي المفتاح فوراً</div>
-              <div style="font-size:12px; color:var(--ink-soft); line-height:1.7; margin-top:6px;">
-                راح يظهر مفتاح يبدأ بـ <span style="font-family:monospace; background:var(--surface-2); padding:2px 6px; border-radius:4px;">github_pat_</span><br>
-                <strong style="color:var(--danger);">⚠️ انسخيه الآن — راح يختفي بعد ما تغادرين الصفحة ولن تشوفينه مرة ثانية.</strong>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="guide-step">
-          <div class="row" style="align-items:flex-start;">
-            <div class="guide-step-num">5</div>
-            <div class="flex-1">
-              <div style="font-weight:700; font-size:14px;">ألصقي المعلومات في الإعدادات</div>
-              <div style="font-size:12px; color:var(--ink-soft); line-height:1.7; margin-top:6px;">
-                ارجعي للإعدادات هنا، ادخلي:<br>
-                • اسم مستخدم GitHub (مثلاً: ashjan-nb)<br>
-                • اسم المستودع: budget-data<br>
-                • ألصقي المفتاح في حقل "مفتاح الوصول"<br>
-                اضغطي "حفظ وبدء المزامنة" — بياناتك راح ترفع تلقائياً!
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card card-ok">
-          <div style="font-weight:700; font-size:14px; color:var(--accent); margin-bottom:6px;">✓ بعد الإعداد</div>
-          <div style="font-size:12px; color:var(--ink-soft); line-height:1.7;">
-            في كل جهاز جديد، افتحي الموقع → الإعدادات → ألصقي نفس البيانات الثلاث. كل بياناتك راح تتحمّل تلقائياً وتتزامن مع كل تغيير.
-          </div>
-        </div>
-
-        <button class="btn btn-gh" style="width:100%;" data-action="close-view">رجوع للإعدادات</button>
+        <div class="guide-step"><div class="row" style="align-items:flex-start;"><div class="guide-step-num">1</div><div class="flex-1">
+          <div style="font-weight:700; font-size:14px;">أنشئي مستودع خاص</div>
+          <div style="font-size:12px; color:var(--ink-soft); line-height:1.7; margin-top:6px;">ادخلي <a href="https://github.com/new" target="_blank" style="color:var(--gh); text-decoration:underline;">github.com/new</a><br>• Repository name: <strong>budget-data</strong><br>• اختاري <strong>Private</strong> ⚠️ مهم<br>• علّمي على <strong>Add a README file</strong><br>• Create repository</div>
+        </div></div></div>
+        <div class="guide-step"><div class="row" style="align-items:flex-start;"><div class="guide-step-num">2</div><div class="flex-1">
+          <div style="font-weight:700; font-size:14px;">أنشئي مفتاح الوصول</div>
+          <div style="font-size:12px; color:var(--ink-soft); line-height:1.7; margin-top:6px;">ادخلي <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" style="color:var(--gh); text-decoration:underline;">github.com/settings/personal-access-tokens/new</a><br>• Token name: <strong>Budget App</strong><br>• Expiration: <strong>No expiration</strong> أو سنة<br>• Repository access: <strong>Only select repositories</strong> → اختاري <strong>budget-data</strong></div>
+        </div></div></div>
+        <div class="guide-step"><div class="row" style="align-items:flex-start;"><div class="guide-step-num">3</div><div class="flex-1">
+          <div style="font-weight:700; font-size:14px;">أعطي الصلاحيات</div>
+          <div style="font-size:12px; color:var(--ink-soft); line-height:1.7; margin-top:6px;">نزّلي إلى <strong>Repository permissions</strong> → ابحثي عن <strong>Contents</strong> → غيّري إلى <strong>Read and write</strong> → Generate token</div>
+        </div></div></div>
+        <div class="guide-step"><div class="row" style="align-items:flex-start;"><div class="guide-step-num">4</div><div class="flex-1">
+          <div style="font-weight:700; font-size:14px;">انسخي المفتاح فوراً</div>
+          <div style="font-size:12px; color:var(--ink-soft); line-height:1.7; margin-top:6px;">المفتاح يبدأ بـ <span style="font-family:monospace; background:var(--surface-2); padding:2px 6px; border-radius:4px;">github_pat_</span><br><strong style="color:var(--danger);">⚠️ انسخيه الآن — راح يختفي.</strong></div>
+        </div></div></div>
+        <div class="guide-step"><div class="row" style="align-items:flex-start;"><div class="guide-step-num">5</div><div class="flex-1">
+          <div style="font-weight:700; font-size:14px;">ألصقي في الإعدادات</div>
+          <div style="font-size:12px; color:var(--ink-soft); line-height:1.7; margin-top:6px;">ارجعي للإعدادات، ادخلي اسم المستخدم + المستودع + المفتاح → احفظي</div>
+        </div></div></div>
+        <button class="btn btn-gh" style="width:100%;" data-action="close-view">رجوع</button>
       </div>
     </div>
   `;
@@ -1115,11 +1094,12 @@ function githubGuideView() {
 
 function guideView() {
   const steps = [
-    { t: 'أضيفي للشاشة الرئيسية (آيفون)', d: 'في Safari، اضغطي زر المشاركة → "إضافة إلى الشاشة الرئيسية".' },
-    { t: 'إضافة المصاريف بالنسخ واللصق', d: 'من تطبيق "الرسائل": ادخلي محادثة البنك → اضغطي رسالة طويلاً → "أكثر" → اختاري عدة رسائل → نسخ → ألصقي في تبويب "إضافة".' },
-    { t: 'التعلّم التلقائي', d: 'لما الموقع يحط تاجر في "أخرى"، عدّلي تصنيفه يدوياً مرة وحدة. من بعدها يتذكره دائماً.' },
-    { t: 'المزامنة السحابية', d: 'فعّلي GitHub Sync من الإعدادات. بعدها كل بياناتك تتزامن تلقائياً بين كل أجهزتك.' },
-    { t: 'الذكاء الاصطناعي (اختياري)', d: 'لو تبين تصنيف فوري للتجار المجهولين، فعّلي AI من الإعدادات (يحتاج حساب Anthropic مدفوع).' },
+    { t: 'أضيفي للشاشة الرئيسية', d: 'في Safari، اضغطي زر المشاركة → "إضافة إلى الشاشة الرئيسية".' },
+    { t: 'إضافة المصاريف بالنسخ واللصق', d: 'من تطبيق "الرسائل": اضغطي رسالة طويلاً → "أكثر" → اختاري عدة رسائل → نسخ → ألصقي في تبويب "إضافة".' },
+    { t: 'العمليات اليدوية', d: 'للعمليات اللي ما تجيك في رسائل (إيجار، رواتب)، استخدمي زر "+ إضافة عملية يدوية" في الصفحة الرئيسية.' },
+    { t: 'تعديل الفئات والميزانيات', d: 'من الإعدادات → الفئات والميزانيات. تقدرين تغيّرين ميزانية كل فئة.' },
+    { t: 'التعلّم التلقائي', d: 'عدّلي تصنيف أي تاجر يدوياً مرة وحدة — الموقع يتذكره دائماً.' },
+    { t: 'المزامنة السحابية', d: 'فعّلي GitHub Sync للمزامنة بين كل أجهزتك تلقائياً.' },
   ];
   return `
     <div class="app">
@@ -1187,6 +1167,17 @@ function attachEvents() {
   }
   const f = document.getElementById('importFile');
   if (f) f.addEventListener('change', handleImportFile);
+  // Live total update on category targets
+  const tgtInputs = document.querySelectorAll('.cat-target-input');
+  if (tgtInputs.length > 0) {
+    const updateTotal = () => {
+      let t = 0;
+      tgtInputs.forEach(inp => { t += parseFloat(inp.value) || 0; });
+      const tEl = document.getElementById('catsTotal');
+      if (tEl) tEl.textContent = fmtNoCur(t) + ' ريال';
+    };
+    tgtInputs.forEach(inp => inp.addEventListener('input', updateTotal));
+  }
 }
 
 function handleAction(action, e) {
@@ -1196,10 +1187,27 @@ function handleAction(action, e) {
     case 'open-settings': setState({ view: 'settings' }); break;
     case 'open-guide': setState({ view: 'guide' }); break;
     case 'open-github-guide': setState({ view: 'github-guide' }); break;
+    case 'open-categories': setState({ view: 'categories' }); break;
     case 'close-view': setState({ view: null }); break;
     case 'set-tab': setState({ tab: data.tab, parsedSMS: [], parseError: '', filterCat: 'all' }); break;
     case 'goto-paste': setState({ tab: 'paste' }); break;
     case 'set-filter': setState({ filterCat: data.cat }); break;
+    case 'filter-by-cat': setState({ tab: 'transactions', filterCat: data.cat }); break;
+
+    case 'open-manual': setState({ manualTxn: { merchant: '', amount: 0, date: todayISO(), category: (state.config.categories || DEFAULT_CATEGORIES)[0].id } }); break;
+    case 'cancel-manual': setState({ manualTxn: null }); break;
+    case 'set-manual-cat': state.manualTxn = Object.assign({}, state.manualTxn, { category: data.cat }); render(); break;
+    case 'save-manual': {
+      const m = document.getElementById('manMerchant').value.trim() || 'عملية يدوية';
+      const a = parseFloat(document.getElementById('manAmount').value) || 0;
+      const d = document.getElementById('manDate').value || todayISO();
+      if (a <= 0) { alert('أدخلي مبلغ صحيح'); return; }
+      const newTxn = { id: newId(), merchant: m, amount: a, date: d, category: state.manualTxn.category, type: 'purchase', raw: 'إضافة يدوية' };
+      state.txns = [newTxn].concat(state.txns);
+      saveTxns();
+      setState({ manualTxn: null });
+      break;
+    }
 
     case 'parse-sms': {
       const ta = document.getElementById('smsTextarea');
@@ -1225,10 +1233,7 @@ function handleAction(action, e) {
       const u = state.parsedSMS.slice();
       const oldCat = u[idx].category, newCat = data.cat;
       u[idx] = Object.assign({}, u[idx], { category: newCat });
-      if (oldCat !== newCat && u[idx].merchant && u[idx].merchant !== 'غير معروف') {
-        state.merchantRules[u[idx].merchant.toUpperCase()] = newCat;
-        saveMerchantRules();
-      }
+      if (oldCat !== newCat && u[idx].merchant && u[idx].merchant !== 'غير معروف') { state.merchantRules[u[idx].merchant.toUpperCase()] = newCat; saveMerchantRules(); }
       setState({ parsedSMS: u });
       break;
     }
@@ -1254,16 +1259,31 @@ function handleAction(action, e) {
     case 'cancel-edit': setState({ editingTxn: null, editingTxnOriginal: null }); break;
     case 'delete-txn': { if (confirm('متأكدة من حذف العملية؟')) { state.txns = state.txns.filter(t => t.id !== state.editingTxn.id); saveTxns(); setState({ editingTxn: null, editingTxnOriginal: null }); } break; }
 
+    case 'save-categories': {
+      const cats = (state.config.categories || DEFAULT_CATEGORIES).slice();
+      const inputs = document.querySelectorAll('.cat-target-input');
+      inputs.forEach(inp => {
+        const id = inp.dataset.catId;
+        const val = parseFloat(inp.value) || 0;
+        const idx = cats.findIndex(c => c.id === id);
+        if (idx !== -1) cats[idx] = Object.assign({}, cats[idx], { target: val });
+      });
+      state.config = Object.assign({}, state.config, { categories: cats });
+      saveConfig();
+      setState({ view: null });
+      break;
+    }
+
     case 'save-settings': {
-      const b = parseFloat(document.getElementById('setBudget').value) || 0;
-      const s = parseFloat(document.getElementById('setSavings').value) || 0;
       const r = Math.min(28, Math.max(1, parseInt(document.getElementById('setResetDay').value, 10) || 1));
+      const curEl = document.getElementById('setCurrency');
+      const curr = curEl ? curEl.value.trim() || 'ريال' : 'ريال';
       const apiKeyEl = document.getElementById('setApiKey');
-      const aiApiKey = apiKeyEl ? apiKeyEl.value : state.config.aiApiKey;
       const ghOwnerEl = document.getElementById('setGhOwner');
       const ghRepoEl = document.getElementById('setGhRepo');
       const ghTokenEl = document.getElementById('setGhToken');
-      const patch = { monthlyBudget: b, savingsGoal: s, resetDay: r, aiApiKey };
+      const patch = { resetDay: r, currency: curr };
+      if (apiKeyEl) patch.aiApiKey = apiKeyEl.value;
       if (ghOwnerEl) patch.ghOwner = ghOwnerEl.value.trim();
       if (ghRepoEl) patch.ghRepo = ghRepoEl.value.trim();
       if (ghTokenEl && ghTokenEl.value) patch.ghToken = ghTokenEl.value.trim();
@@ -1276,33 +1296,22 @@ function handleAction(action, e) {
       const o = document.getElementById('setGhOwner').value.trim();
       const r = document.getElementById('setGhRepo').value.trim();
       const t = document.getElementById('setGhToken').value.trim();
-      if (!o || !r || !t) { alert('املأي كل الحقول الثلاثة'); return; }
+      if (!o || !r || !t) { alert('املأي كل الحقول'); return; }
       state.config = Object.assign({}, state.config, { ghOwner: o, ghRepo: r, ghToken: t });
       try { localStorage.setItem('cfg', JSON.stringify(state.config)); } catch (e) {}
       state.ghSha = null;
       (async () => {
-        try {
-          const repo = await testGithubConnection();
-          alert('✓ نجح الاتصال!\nالمستودع: ' + repo.name + (repo.private ? ' (خاص)' : ' ⚠️ عام (غير آمن)'));
-          await initialSync();
-        } catch (err) {
-          alert('❌ فشل الاتصال: ' + err.message);
-        }
+        try { const repo = await testGithubConnection(); alert('✓ نجح!\nالمستودع: ' + repo.name + (repo.private ? ' (خاص)' : ' ⚠️ عام')); await initialSync(); }
+        catch (err) { alert('❌ فشل: ' + err.message); }
       })();
       break;
     }
     case 'test-github': {
       (async () => {
-        const ghOwnerEl = document.getElementById('setGhOwner');
-        const ghRepoEl = document.getElementById('setGhRepo');
-        const ghTokenEl = document.getElementById('setGhToken');
-        if (ghOwnerEl) state.config.ghOwner = ghOwnerEl.value.trim();
-        if (ghRepoEl) state.config.ghRepo = ghRepoEl.value.trim();
-        if (ghTokenEl && ghTokenEl.value) state.config.ghToken = ghTokenEl.value.trim();
-        try {
-          const repo = await testGithubConnection();
-          alert('✓ نجح الاتصال!\nالمستودع: ' + repo.name + (repo.private ? ' (خاص ✓)' : ' ⚠️ عام'));
-        } catch (err) { alert('❌ ' + err.message); }
+        const o = document.getElementById('setGhOwner'); const r = document.getElementById('setGhRepo'); const t = document.getElementById('setGhToken');
+        if (o) state.config.ghOwner = o.value.trim(); if (r) state.config.ghRepo = r.value.trim(); if (t && t.value) state.config.ghToken = t.value.trim();
+        try { const repo = await testGithubConnection(); alert('✓ نجح!\nالمستودع: ' + repo.name + (repo.private ? ' (خاص ✓)' : ' ⚠️ عام')); }
+        catch (err) { alert('❌ ' + err.message); }
       })();
       break;
     }
@@ -1312,27 +1321,23 @@ function handleAction(action, e) {
       (async () => {
         const ke = document.getElementById('setApiKey');
         if (ke) { state.config.aiApiKey = ke.value; try { localStorage.setItem('cfg', JSON.stringify(state.config)); } catch(e){} }
-        try { const r = await classifyWithAI('CARREFOUR HYPERMARKET'); alert('✓ نجح! Claude صنّف "كارفور" كـ: ' + r); }
+        try { const r = await classifyWithAI('CARREFOUR HYPERMARKET'); alert('✓ نجح! صنّف "كارفور" كـ: ' + r); }
         catch (err) { alert('❌ فشل: ' + err.message); }
       })();
       break;
     }
-    case 'clear-rules': { if (confirm('حذف ' + Object.keys(state.merchantRules).length + ' قاعدة متعلَّمة؟')) { state.merchantRules = {}; saveMerchantRules(); render(); } break; }
+    case 'clear-rules': { if (confirm('حذف ' + Object.keys(state.merchantRules).length + ' قاعدة؟')) { state.merchantRules = {}; saveMerchantRules(); render(); } break; }
     case 'set-pin': {
-      const pe = document.getElementById('newPin');
-      const pin = pe ? pe.value : '';
-      if (pin.length < 4) { alert('الرمز يحتاج ٤ أرقام على الأقل'); return; }
-      const h = hashPin(pin);
-      localStorage.setItem('pin_hash', h);
-      state.pinHash = h;
-      alert('✓ تم تفعيل الرمز');
-      render();
+      const pe = document.getElementById('newPin'); const pin = pe ? pe.value : '';
+      if (pin.length < 4) { alert('الرمز يحتاج ٤ أرقام'); return; }
+      localStorage.setItem('pin_hash', hashPin(pin));
+      state.pinHash = localStorage.getItem('pin_hash');
+      alert('✓ تم التفعيل'); render();
       break;
     }
     case 'remove-pin': { if (confirm('إلغاء الرمز؟')) { localStorage.removeItem('pin_hash'); state.pinHash = null; render(); } break; }
     case 'pin-submit': {
-      const inp = document.getElementById('pinInput');
-      const pin = inp ? inp.value : '';
+      const inp = document.getElementById('pinInput'); const pin = inp ? inp.value : '';
       if (hashPin(pin) === state.pinHash) setState({ unlocked: true, pinAttemptError: false });
       else { if (inp) inp.value = ''; setState({ pinAttemptError: true }); }
       break;
@@ -1341,8 +1346,7 @@ function handleAction(action, e) {
       const d = { cfg: state.config, txns: state.txns, merchantRules: state.merchantRules, exported: new Date().toISOString() };
       const blob = new Blob([JSON.stringify(d, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = 'budget-' + todayISO() + '.json'; a.click();
+      const a = document.createElement('a'); a.href = url; a.download = 'budget-' + todayISO() + '.json'; a.click();
       URL.revokeObjectURL(url);
       break;
     }
@@ -1351,8 +1355,7 @@ function handleAction(action, e) {
 }
 
 function handleImportFile(e) {
-  const file = e.target.files[0];
-  if (!file) return;
+  const file = e.target.files[0]; if (!file) return;
   const r = new FileReader();
   r.onload = ev => {
     try {
@@ -1361,8 +1364,7 @@ function handleImportFile(e) {
       if (d.cfg) { state.config = Object.assign({}, DEFAULT_CONFIG, d.cfg); saveConfig(); }
       if (d.txns) { state.txns = d.txns; saveTxns(); }
       if (d.merchantRules) { state.merchantRules = d.merchantRules; saveMerchantRules(); }
-      alert('✓ تم الاستيراد');
-      render();
+      alert('✓ تم الاستيراد'); render();
     } catch (err) { alert('❌ ملف غير صالح'); }
   };
   r.readAsText(file);
@@ -1370,10 +1372,7 @@ function handleImportFile(e) {
 
 loadState();
 render();
-// Initial sync on load (non-blocking)
-if (ghIsConfigured()) {
-  setTimeout(() => initialSync(), 100);
-}
+if (ghIsConfigured()) setTimeout(() => initialSync(), 100);
 </script>
 </body>
 </html>
