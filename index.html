@@ -984,6 +984,8 @@
   .btn-secondary { background: var(--bg-subtle); color: var(--ink); }
   .btn-secondary:hover { background: var(--divider); }
   .btn-ghost { color: var(--ink-muted); }
+  .auth-link { color: var(--accent); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; font-size: 13px; }
+  .auth-link:hover { color: var(--accent-hover); }
   .btn-ghost:hover { background: var(--bg-subtle); color: var(--ink); }
   .btn-danger { color: var(--danger); }
   .btn-danger:hover { background: var(--danger-soft); }
@@ -1171,6 +1173,8 @@
 </style>
 </head>
 <body data-theme="light">
+
+<div id="appRoot">
 
 <header class="masthead">
   <div class="brand">
@@ -1384,52 +1388,32 @@
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
 </button>
 
-<!-- =========== LOCK SCREEN =========== -->
-<div id="lockScreen" style="display:none; position: fixed; inset: 0; z-index: 500; background: var(--bg); align-items: center; justify-content: center; padding: 24px;">
-  <div style="max-width: 380px; width: 100%; text-align: center;">
-    <div style="font-family: var(--serif); font-style: italic; font-weight: 300; font-size: 48px; letter-spacing: -0.02em; margin-bottom: 4px;">Ledger</div>
-    <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.2em; color: var(--ink-faint); font-weight: 600; margin-bottom: 32px;">locked</div>
-    <div style="width: 60px; height: 60px; border-radius: 50%; background: var(--bg-subtle); margin: 0 auto 24px; display: grid; place-items: center;">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-    </div>
-    <input id="lockPassword" type="password" placeholder="Enter password" style="width: 100%; padding: 12px 14px; background: var(--bg-elevated); border: 1px solid var(--divider); border-radius: var(--radius); font-size: 15px; text-align: center; color: var(--ink); margin-bottom: 12px;" autocomplete="current-password" />
-    <button class="btn btn-primary" id="lockUnlock" style="width: 100%; padding: 12px;">Unlock</button>
-    <div id="lockError" style="font-size: 12px; color: var(--danger); margin-top: 10px; min-height: 14px;"></div>
-    <button id="lockForgot" style="margin-top: 20px; font-size: 11px; color: var(--ink-faint); text-decoration: underline; text-underline-offset: 4px;">Forgot password?</button>
-  </div>
-</div>
+</div><!-- /#appRoot -->
 
-<!-- =========== PASSWORD SETUP MODAL =========== -->
-<div class="modal-backdrop" id="pwModal" role="dialog" aria-modal="true">
-  <div class="modal" style="max-width: 420px;">
-    <div class="modal-head">
-      <h3 class="modal-title" id="pwModalTitle">Enable password</h3>
-      <button class="modal-close" id="pwClose" aria-label="Close">×</button>
+<!-- =========== AUTH SCREEN (sign in / sign up) =========== -->
+<div id="authScreen" style="display:none; position: fixed; inset: 0; z-index: 500; background: var(--bg); align-items: center; justify-content: center; padding: 24px; padding-top: max(24px, env(safe-area-inset-top));">
+  <div style="max-width: 380px; width: 100%;">
+    <div style="text-align: center; margin-bottom: 32px;">
+      <div style="font-family: var(--serif); font-style: italic; font-weight: 300; font-size: 48px; letter-spacing: -0.02em; margin-bottom: 4px;">Ledger</div>
+      <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.2em; color: var(--ink-faint); font-weight: 600;">monthly spending</div>
     </div>
-    <div class="modal-body">
-      <div id="pwIntro" style="font-size: 13px; color: var(--ink-muted); line-height: 1.6; margin-bottom: 16px;">
-        Your data will be encrypted with this password using AES-256. Anyone visiting your URL will see a lock screen.
-        <div style="margin-top: 8px; padding: 10px 12px; background: var(--warning-soft); border-radius: var(--radius); color: var(--warning); font-size: 12px;">
-          <strong>Important:</strong> If you forget this password, your data cannot be recovered. Export a backup first.
-        </div>
-      </div>
-      <div class="field" id="pwOldField" style="display:none;">
-        <label class="field-label" for="pwOld">Current password</label>
-        <input id="pwOld" class="field-input" type="password" autocomplete="current-password" />
-      </div>
+    <div style="background: var(--bg-elevated); border: 1px solid var(--divider); border-radius: var(--radius-lg); padding: 28px;">
+      <h2 id="authTitle" style="font-family: var(--serif); font-style: italic; font-weight: 400; font-size: 24px; margin: 0 0 20px;">Welcome back</h2>
       <div class="field">
-        <label class="field-label" for="pwNew" id="pwNewLabel">Password</label>
-        <input id="pwNew" class="field-input" type="password" autocomplete="new-password" placeholder="Minimum 6 characters" />
+        <label class="field-label" for="authEmail">Email</label>
+        <input id="authEmail" class="field-input" type="email" placeholder="you@example.com" autocomplete="email" autocapitalize="off" autocorrect="off" spellcheck="false" />
       </div>
-      <div class="field" style="margin-bottom: 0;">
-        <label class="field-label" for="pwConfirm">Confirm password</label>
-        <input id="pwConfirm" class="field-input" type="password" autocomplete="new-password" />
+      <div class="field" style="margin-bottom: 18px;">
+        <label class="field-label" for="authPassword">Password</label>
+        <input id="authPassword" class="field-input" type="password" placeholder="Minimum 6 characters" autocomplete="current-password" />
       </div>
-      <div id="pwError" style="font-size: 12px; color: var(--danger); margin-top: 10px; min-height: 14px;"></div>
+      <button class="btn btn-primary" id="authSubmit" style="width: 100%; padding: 12px;">Sign in</button>
+      <div id="authError" style="display:none; font-size: 12px; color: var(--danger); margin-top: 12px; padding: 10px 12px; background: var(--danger-soft); border-radius: var(--radius);"></div>
+      <div id="authInfo" style="display:none; font-size: 12px; color: var(--accent); margin-top: 12px; padding: 10px 12px; background: var(--accent-soft); border-radius: var(--radius);"></div>
+      <div id="authToggleText" style="text-align: center; font-size: 13px; color: var(--ink-muted); margin-top: 18px;"></div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" id="pwCancel">Cancel</button>
-      <button class="btn btn-primary" id="pwSave">Save</button>
+    <div style="text-align: center; font-size: 11px; color: var(--ink-faint); margin-top: 20px; line-height: 1.6;">
+      Your data is private to your account and synced securely across your devices.
     </div>
   </div>
 </div>
@@ -1583,62 +1567,6 @@
     <div class="modal-footer">
       <button class="btn btn-ghost" id="budgetCancel">Cancel</button>
       <button class="btn btn-primary" id="budgetSave">Save</button>
-    </div>
-  </div>
-</div>
-
-<!-- =========== SYNC SETUP MODAL =========== -->
-<div class="modal-backdrop" id="syncModal" role="dialog" aria-modal="true">
-  <div class="modal" style="max-width: 520px;">
-    <div class="modal-head">
-      <h3 class="modal-title">Cross-device sync</h3>
-      <button class="modal-close" id="syncModalClose" aria-label="Close">×</button>
-    </div>
-    <div class="modal-body">
-      <div style="font-size: 12px; color: var(--ink-muted); line-height: 1.6; margin-bottom: 18px;">
-        Sync your data across iPhone and laptop using your own private GitHub repo as the database. Your existing password protection (if enabled) keeps the data encrypted — GitHub only sees an unreadable blob.
-      </div>
-
-      <details style="background: var(--bg-subtle); padding: 12px 14px; border-radius: var(--radius); margin-bottom: 18px;">
-        <summary style="cursor: pointer; font-size: 13px; font-weight: 500; color: var(--ink);">How to set this up (3 steps)</summary>
-        <ol style="font-size: 12px; color: var(--ink-muted); line-height: 1.7; margin: 12px 0 0; padding-left: 20px;">
-          <li><strong>Create a private repo</strong> for the data file. Name it anything (e.g., <code>ledger-data</code>). <a href="https://github.com/new" target="_blank" rel="noopener" style="color: var(--accent);">Open GitHub →</a> Pick <strong>Private</strong>. Tick <strong>Add a README</strong>. Click Create.</li>
-          <li><strong>Generate a token</strong> with access to only that repo. <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener" style="color: var(--accent);">Open token page →</a> Under <em>Repository access</em> pick <strong>Only select repositories</strong> and choose the repo you just made. Under <em>Permissions → Repository → Contents</em> pick <strong>Read and write</strong>. Set an expiration (1 year is fine). Click Generate. Copy the token (starts with <code>github_pat_</code>).</li>
-          <li><strong>Paste below.</strong> Repo format is <code>username/reponame</code>.</li>
-        </ol>
-      </details>
-
-      <div class="field">
-        <label class="field-label" for="syncRepo">Repository</label>
-        <input id="syncRepo" class="field-input" type="text" placeholder="yourname/ledger-data" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
-      </div>
-      <div class="field">
-        <label class="field-label" for="syncToken">Personal access token</label>
-        <input id="syncToken" class="field-input" type="password" placeholder="github_pat_..." autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
-        <div style="font-size: 11px; color: var(--ink-faint); margin-top: 6px; line-height: 1.5;">
-          Stored in this browser only. To protect it if your device is lost or shared, also enable password protection — that encrypts the whole config.
-        </div>
-      </div>
-
-      <div id="syncTestResult" style="display:none; padding: 12px; border-radius: var(--radius); margin-top: 8px; font-size: 12px; line-height: 1.5;"></div>
-
-      <div id="syncCurrentStatus" style="display:none; margin-top: 14px; padding: 14px; background: var(--bg-subtle); border-radius: var(--radius); font-size: 12px; line-height: 1.7;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <strong style="color: var(--ink);">Sync is active</strong>
-          <span class="sync-indicator-mini">
-            <span class="sync-dot" style="display:inline-block; width:8px; height:8px; border-radius:50%; background: var(--success); margin-right: 6px;"></span>
-            <span id="syncStatusText">—</span>
-          </span>
-        </div>
-        <div style="color: var(--ink-muted);">Repo: <code id="syncStatusRepo">—</code></div>
-        <div style="color: var(--ink-muted);">Last sync: <span id="syncStatusTime">—</span></div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-danger" id="syncDisable" style="margin-right: auto; display: none;">Turn off</button>
-      <button class="btn btn-ghost" id="syncCancel">Cancel</button>
-      <button class="btn btn-secondary" id="syncNow" style="display: none;">Sync now</button>
-      <button class="btn btn-primary" id="syncSave">Test &amp; enable</button>
     </div>
   </div>
 </div>
@@ -1799,74 +1727,6 @@ const CURRENCY_SYMBOL = {
 // ============================================================
 // STORAGE LAYER (window.storage with in-memory fallback)
 // ============================================================
-// ============================================================
-// ENCRYPTION (AES-GCM via Web Crypto, key derived from password via PBKDF2)
-// ============================================================
-const Crypto = {
-  enc: new TextEncoder(),
-  dec: new TextDecoder(),
-
-  async deriveKey(password, salt) {
-    const baseKey = await crypto.subtle.importKey(
-      'raw', this.enc.encode(password),
-      { name: 'PBKDF2' }, false, ['deriveKey']
-    );
-    return crypto.subtle.deriveKey(
-      { name: 'PBKDF2', salt, iterations: 150000, hash: 'SHA-256' },
-      baseKey,
-      { name: 'AES-GCM', length: 256 },
-      false,
-      ['encrypt', 'decrypt']
-    );
-  },
-
-  // Pack { salt, iv, ciphertext } -> base64 string
-  async encrypt(plaintext, password) {
-    const salt = crypto.getRandomValues(new Uint8Array(16));
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const key = await this.deriveKey(password, salt);
-    const ct = await crypto.subtle.encrypt(
-      { name: 'AES-GCM', iv }, key, this.enc.encode(plaintext)
-    );
-    // Concat salt + iv + ct, then base64
-    const buf = new Uint8Array(salt.length + iv.length + ct.byteLength);
-    buf.set(salt, 0);
-    buf.set(iv, salt.length);
-    buf.set(new Uint8Array(ct), salt.length + iv.length);
-    return 'ENC1:' + this.bufToBase64(buf);
-  },
-
-  async decrypt(packed, password) {
-    if (!packed.startsWith('ENC1:')) throw new Error('Not encrypted with this scheme');
-    const buf = this.base64ToBuf(packed.slice(5));
-    const salt = buf.slice(0, 16);
-    const iv = buf.slice(16, 28);
-    const ct = buf.slice(28);
-    const key = await this.deriveKey(password, salt);
-    const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
-    return this.dec.decode(pt);
-  },
-
-  bufToBase64(buf) {
-    let s = '';
-    for (let i = 0; i < buf.byteLength; i++) s += String.fromCharCode(buf[i]);
-    return btoa(s);
-  },
-  base64ToBuf(b64) {
-    const s = atob(b64);
-    const buf = new Uint8Array(s.length);
-    for (let i = 0; i < s.length; i++) buf[i] = s.charCodeAt(i);
-    return buf;
-  }
-};
-
-// Session-only password storage (never persisted)
-const Session = {
-  password: null,
-  encryptionEnabled: false,
-  unlocked: false,
-};
-
 
 const memStore = {};
 const Store = {
@@ -1968,7 +1828,7 @@ const Store = {
 // STATE
 // ============================================================
 const state = {
-  data: { transactions: [], budgets: {}, categories: DEFAULT_CATEGORIES.slice(), settings: { currency: 'SAR', monthlyBudget: 0, weekStart: 0, theme: 'light' } },
+  data: { transactions: [], budgets: { ...DEFAULT_BUDGETS }, categories: DEFAULT_CATEGORIES.slice(), settings: { currency: 'SAR', monthlyBudget: DEFAULT_MONTHLY_BUDGET, weekStart: 0, theme: 'light' } },
   cursorMonth: new Date(),
   view: 'overview',
   logFilter: 'all',
@@ -1981,365 +1841,324 @@ const state = {
 };
 
 // ============================================================
-// GITHUB SYNC ENGINE
+// SUPABASE CLOUD ENGINE
 // ============================================================
-// Uses your own private GitHub repo as a cross-device database.
-// Stores the raw localStorage blob (which is already encrypted if
-// password protection is enabled), so encryption is transparent
-// to the sync layer.
+// Each user signs up with email + password. Their data lives in a
+// per-user row in the `user_data` table, protected by Row-Level
+// Security so no user can ever read another's data.
 
-const GitHubSync = {
-  API: 'https://api.github.com',
-  FILE_PATH: 'data.json', // updated dynamically by fetch() to whichever file exists
-  TIMEOUT_MS: 15000,
+const SUPABASE_URL = 'https://rsqlxikltvytepaoncgl.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzcWx4aWtsdHZ5dGVwYW9uY2dsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwMjIxMDMsImV4cCI6MjA5NzU5ODEwM30.ZrMVcx8IAKS1pPBppHwrqNnOqmv16psBfOrEWn8mgQM';
 
-  _headers(token) {
+const Cloud = {
+  AUTH: SUPABASE_URL + '/auth/v1',
+  REST: SUPABASE_URL + '/rest/v1',
+  TIMEOUT_MS: 20000,
+
+  // Session in memory + persisted
+  session: null,   // { access_token, refresh_token, user: {id, email}, expires_at }
+  status: 'idle',  // 'idle' | 'syncing' | 'error' | 'offline'
+  error: null,
+
+  _baseHeaders() {
     return {
-      'Authorization': 'Bearer ' + token,
-      'Accept': 'application/vnd.github+json',
-      'X-GitHub-Api-Version': '2022-11-28'
+      'apikey': SUPABASE_ANON_KEY,
+      'Content-Type': 'application/json'
+    };
+  },
+  _authHeaders() {
+    return {
+      ...this._baseHeaders(),
+      'Authorization': 'Bearer ' + (this.session ? this.session.access_token : SUPABASE_ANON_KEY)
     };
   },
 
-  // fetch with a hard timeout so the UI never hangs on "Syncing…" forever
   async _fetch(url, options = {}) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.TIMEOUT_MS);
     try {
-      const res = await fetch(url, { ...options, signal: controller.signal });
-      return res;
+      return await fetch(url, { ...options, signal: controller.signal });
     } catch (e) {
-      if (e.name === 'AbortError') {
-        throw new Error('Timed out after 15s — check your internet connection');
-      }
-      // Network-level failure (DNS, offline, CORS, etc.)
-      throw new Error('Network error reaching GitHub — check your connection');
+      if (e.name === 'AbortError') throw new Error('Timed out — check your internet connection');
+      throw new Error('Network error — check your connection');
     } finally {
       clearTimeout(timer);
     }
   },
 
-  // Turn a non-ok response into a clear, specific error
-  async _explainError(res, context) {
-    let detail = '';
-    try {
-      const body = await res.json();
-      detail = body.message || '';
-    } catch (e) {}
-    if (res.status === 401) throw new Error('Token is invalid or expired — generate a new one');
-    if (res.status === 403) {
-      if (/rate limit/i.test(detail)) throw new Error('GitHub rate limit hit — wait a few minutes');
-      throw new Error('Token lacks permission. It needs Contents: Read AND Write on this repo');
-    }
-    if (res.status === 404) throw new Error('Repo not found. Check the name (owner/repo) and that the token can access it');
-    if (res.status === 422) throw new Error('GitHub rejected the request: ' + (detail || 'unprocessable'));
-    throw new Error(context + ' failed (' + res.status + ')' + (detail ? ': ' + detail : ''));
-  },
-
-  // Verify token + repo are valid. Returns repo info.
-  async test(token, repo) {
-    if (!token || !repo) throw new Error('Token and repo are required');
-    if (!repo.includes('/')) throw new Error('Repo must be in format owner/name');
-    const res = await this._fetch(this.API + '/repos/' + repo, {
-      headers: this._headers(token)
+  // ---- AUTH ----
+  async signUp(email, password) {
+    const res = await this._fetch(this.AUTH + '/signup', {
+      method: 'POST',
+      headers: this._baseHeaders(),
+      body: JSON.stringify({ email, password })
     });
-    if (!res.ok) await this._explainError(res, 'Connection test');
-    const info = await res.json();
-    // Also verify we actually have write permission
-    if (info.permissions && !info.permissions.push) {
-      throw new Error('This token can READ but not WRITE to the repo. Regenerate it with Contents: Read and write');
-    }
-    return info;
-  },
-
-  // Filenames to try, in order (handles data created by older app versions)
-  FILE_CANDIDATES: ['data.json', 'ledger-data.json'],
-
-  // Fetch the data file. Returns {content, sha, path} or null if not yet created.
-  async fetch(token, repo) {
-    // Try the primary path first, then any fallback names
-    for (const path of this.FILE_CANDIDATES) {
-      const res = await this._fetch(this.API + '/repos/' + repo + '/contents/' + path + '?t=' + Date.now(), {
-        headers: this._headers(token),
-        cache: 'no-store'
-      });
-      if (res.status === 404) continue; // try next candidate
-      if (!res.ok) { await this._explainError(res, 'Fetch'); }
-      const json = await res.json();
-      // Remember which file we actually found, so we write back to the same one
-      this.FILE_PATH = path;
-      return {
-        content: decodeBase64Utf8(json.content || ''),
-        sha: json.sha,
-        path: path
-      };
-    }
-    return null; // none of the candidates exist yet
-  },
-
-  // Create or update the file. Returns new sha.
-  async push(token, repo, content, sha = null) {
-    // If we don't have a sha but the file may already exist, fetch it first
-    // (prevents the common "sha wasn't supplied" 422 error)
-    if (!sha) {
-      try {
-        const existing = await this.fetch(token, repo);
-        if (existing && existing.sha) sha = existing.sha;
-      } catch (e) { /* file may not exist yet — that's fine */ }
-    }
-    const body = {
-      message: 'Sync from Ledger · ' + new Date().toISOString(),
-      content: encodeBase64Utf8(content)
-    };
-    if (sha) body.sha = sha;
-    const res = await this._fetch(this.API + '/repos/' + repo + '/contents/' + this.FILE_PATH, {
-      method: 'PUT',
-      headers: { ...this._headers(token), 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
+    const body = await res.json().catch(() => ({}));
     if (!res.ok) {
-      let err = {};
-      try { err = await res.json(); } catch (e) {}
-      // If sha is stale, fetch latest and retry once
-      if ((res.status === 409 || res.status === 422) && /sha/i.test(err.message || '') && !this._retrying) {
-        this._retrying = true;
-        try {
-          const latest = await this.fetch(token, repo);
-          const newSha = await this.push(token, repo, content, latest ? latest.sha : null);
-          this._retrying = false;
-          return newSha;
-        } catch (retryErr) {
-          this._retrying = false;
-          throw retryErr;
-        }
-      }
-      if (res.status === 401) throw new Error('Token is invalid or expired — generate a new one');
-      if (res.status === 403) throw new Error('Token lacks WRITE permission. It needs Contents: Read AND Write');
-      if (res.status === 404) throw new Error('Repo not found. Check the name and token access');
-      throw new Error(err.message || 'Push failed (' + res.status + ')');
+      throw new Error(body.msg || body.error_description || body.message || 'Sign-up failed');
     }
-    const result = await res.json();
-    return result.content.sha;
+    // If email confirmation is OFF, we get a session immediately.
+    if (body.access_token) {
+      this._setSession(body);
+      return { confirmed: true };
+    }
+    // Otherwise a user is created but needs email confirmation,
+    // OR (depending on settings) the session is nested.
+    if (body.session && body.session.access_token) {
+      this._setSession(body.session);
+      return { confirmed: true };
+    }
+    return { confirmed: false }; // needs email confirmation
+  },
+
+  async signIn(email, password) {
+    const res = await this._fetch(this.AUTH + '/token?grant_type=password', {
+      method: 'POST',
+      headers: this._baseHeaders(),
+      body: JSON.stringify({ email, password })
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const msg = body.error_description || body.msg || body.message || '';
+      if (/invalid login/i.test(msg) || res.status === 400) throw new Error('Wrong email or password');
+      if (/email not confirmed/i.test(msg)) throw new Error('Please confirm your email first (check your inbox)');
+      throw new Error(msg || 'Sign-in failed');
+    }
+    this._setSession(body);
+    return true;
+  },
+
+  async signOut() {
+    try {
+      if (this.session) {
+        await this._fetch(this.AUTH + '/logout', {
+          method: 'POST',
+          headers: this._authHeaders()
+        });
+      }
+    } catch (e) { /* ignore */ }
+    this._clearSession();
+  },
+
+  async refreshSession() {
+    if (!this.session || !this.session.refresh_token) return false;
+    try {
+      const res = await this._fetch(this.AUTH + '/token?grant_type=refresh_token', {
+        method: 'POST',
+        headers: this._baseHeaders(),
+        body: JSON.stringify({ refresh_token: this.session.refresh_token })
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || !body.access_token) { this._clearSession(); return false; }
+      this._setSession(body);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  },
+
+  _setSession(body) {
+    const user = body.user || (body.access_token ? this._decodeUser(body.access_token) : null);
+    this.session = {
+      access_token: body.access_token,
+      refresh_token: body.refresh_token,
+      user: user ? { id: user.id || user.sub, email: user.email } : null,
+      expires_at: Date.now() + ((body.expires_in || 3600) * 1000)
+    };
+    try { localStorage.setItem('ledger-session', JSON.stringify(this.session)); } catch (e) {}
+  },
+
+  _clearSession() {
+    this.session = null;
+    try { localStorage.removeItem('ledger-session'); } catch (e) {}
+  },
+
+  _decodeUser(jwt) {
+    try {
+      const payload = JSON.parse(atob(jwt.split('.')[1]));
+      return { id: payload.sub, email: payload.email };
+    } catch (e) { return null; }
+  },
+
+  async loadStoredSession() {
+    try {
+      const raw = localStorage.getItem('ledger-session');
+      if (!raw) return false;
+      this.session = JSON.parse(raw);
+      // Refresh if expired or close to expiring (within 60s)
+      if (!this.session.expires_at || this.session.expires_at < Date.now() + 60000) {
+        return await this.refreshSession();
+      }
+      return true;
+    } catch (e) {
+      return false;
+    }
+  },
+
+  isLoggedIn() { return !!(this.session && this.session.access_token); },
+  userEmail() { return this.session && this.session.user ? this.session.user.email : ''; },
+  userId() { return this.session && this.session.user ? this.session.user.id : ''; },
+
+  // ---- DATA ----
+  // Fetch this user's data row. Returns parsed data object or null.
+  async pullData() {
+    if (!this.isLoggedIn()) return null;
+    const res = await this._fetch(this.REST + '/user_data?select=data&user_id=eq.' + this.userId(), {
+      headers: this._authHeaders()
+    });
+    if (res.status === 401) {
+      // Token expired mid-session — try one refresh
+      if (await this.refreshSession()) return this.pullData();
+      throw new Error('Session expired — please sign in again');
+    }
+    if (!res.ok) {
+      const b = await res.json().catch(() => ({}));
+      throw new Error(b.message || 'Could not load your data (' + res.status + ')');
+    }
+    const rows = await res.json();
+    if (Array.isArray(rows) && rows.length > 0) return rows[0].data;
+    return null; // no row yet — new user
+  },
+
+  // Upsert this user's data row.
+  async pushData(dataObj) {
+    if (!this.isLoggedIn()) return false;
+    const payload = {
+      user_id: this.userId(),
+      data: dataObj,
+      updated_at: new Date().toISOString()
+    };
+    const res = await this._fetch(this.REST + '/user_data?on_conflict=user_id', {
+      method: 'POST',
+      headers: {
+        ...this._authHeaders(),
+        'Prefer': 'resolution=merge-duplicates,return=minimal'
+      },
+      body: JSON.stringify(payload)
+    });
+    if (res.status === 401) {
+      if (await this.refreshSession()) return this.pushData(dataObj);
+      throw new Error('Session expired — please sign in again');
+    }
+    if (!res.ok) {
+      const b = await res.json().catch(() => ({}));
+      throw new Error(b.message || 'Could not save to cloud (' + res.status + ')');
+    }
+    return true;
   }
 };
 
-// UTF-8-safe base64 (so Arabic and emoji round-trip correctly)
-function encodeBase64Utf8(str) {
-  return btoa(String.fromCharCode(...new TextEncoder().encode(str)));
-}
-function decodeBase64Utf8(b64) {
-  if (!b64) return '';
-  const cleaned = b64.replace(/\s/g, '');
-  const bin = atob(cleaned);
-  const bytes = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  return new TextDecoder().decode(bytes);
-}
-
 // ============================================================
-// SYNC STATE & CONFIG
+// CLOUD STATUS INDICATOR
 // ============================================================
-const SyncState = {
-  enabled: false,
-  token: '',
-  repo: '',
-  lastSha: null,
-  lastSyncAt: null,
-  status: 'idle',  // 'idle' | 'syncing' | 'error' | 'offline'
-  error: null
-};
-
-async function loadSyncConfig() {
-  try {
-    const raw = await Store.get('ledger-sync-config');
-    if (raw) {
-      const cfg = JSON.parse(raw);
-      Object.assign(SyncState, cfg);
-    }
-  } catch (e) { console.warn('Sync config load failed', e); }
+function setCloudStatus(status, error = null) {
+  Cloud.status = status;
+  Cloud.error = error;
+  renderCloudIndicator();
 }
 
-async function saveSyncConfig() {
-  await Store.set('ledger-sync-config', JSON.stringify({
-    enabled: SyncState.enabled,
-    token: SyncState.token,
-    repo: SyncState.repo,
-    lastSha: SyncState.lastSha,
-    lastSyncAt: SyncState.lastSyncAt
-  }));
-}
-
-function setSyncStatus(status, error = null) {
-  SyncState.status = status;
-  SyncState.error = error;
-  renderSyncIndicator();
-}
-
-function renderSyncIndicator() {
+function renderCloudIndicator() {
   const el = document.getElementById('syncIndicator');
   if (!el) return;
-  if (!SyncState.enabled) {
-    el.style.display = 'none';
-    return;
-  }
+  if (!Cloud.isLoggedIn()) { el.style.display = 'none'; return; }
   el.style.display = 'flex';
   const dot = el.querySelector('.sync-dot');
   const label = el.querySelector('.sync-label');
-  if (SyncState.status === 'syncing') {
+  if (Cloud.status === 'syncing') {
     dot.style.background = 'var(--warning)';
-    label.textContent = 'Syncing…';
-  } else if (SyncState.status === 'error') {
+    label.textContent = 'Saving…';
+  } else if (Cloud.status === 'error') {
     dot.style.background = 'var(--danger)';
-    label.textContent = 'Sync error';
-    el.title = SyncState.error || 'Sync failed';
-  } else if (SyncState.status === 'offline') {
+    label.textContent = 'Error';
+    el.title = Cloud.error || 'Sync failed';
+  } else if (Cloud.status === 'offline') {
     dot.style.background = 'var(--ink-faint)';
     label.textContent = 'Offline';
   } else {
     dot.style.background = 'var(--success)';
-    label.textContent = relativeTime(SyncState.lastSyncAt);
-    el.title = SyncState.lastSyncAt ? 'Last synced ' + new Date(SyncState.lastSyncAt).toLocaleString() : 'Synced';
+    label.textContent = 'Saved';
+    el.title = 'Signed in as ' + Cloud.userEmail();
   }
 }
 
-function relativeTime(ts) {
-  if (!ts) return 'Synced';
-  const seconds = Math.floor((Date.now() - ts) / 1000);
-  if (seconds < 30) return 'Just now';
-  if (seconds < 60) return seconds + 's ago';
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return minutes + 'm ago';
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return hours + 'h ago';
-  const days = Math.floor(hours / 24);
-  return days + 'd ago';
-}
-
 // ============================================================
-// SYNC ACTIONS (push / pull)
+// CLOUD SYNC ACTIONS
 // ============================================================
+let _cloudPushTimer = null;
 
-let _syncPushTimer = null;
-
-// Debounced push — call this after any save
-function scheduleSyncPush() {
-  if (!SyncState.enabled) return;
-  clearTimeout(_syncPushTimer);
-  _syncPushTimer = setTimeout(() => doSyncPush(), 2500);
+function scheduleCloudPush() {
+  if (!Cloud.isLoggedIn()) return;
+  clearTimeout(_cloudPushTimer);
+  _cloudPushTimer = setTimeout(() => doCloudPush(), 1500);
 }
 
-async function doSyncPush(opts = {}) {
-  if (!SyncState.enabled) return;
-  if (!navigator.onLine) { setSyncStatus('offline'); return; }
-  if (SyncState.status === 'syncing') return;
-  setSyncStatus('syncing');
+async function doCloudPush(opts = {}) {
+  if (!Cloud.isLoggedIn()) return;
+  if (!navigator.onLine) { setCloudStatus('offline'); return; }
+  setCloudStatus('syncing');
   try {
-    const raw = await Store.get('ledger-app-v1');
-    if (!raw) { setSyncStatus('idle'); return; }
-    const newSha = await GitHubSync.push(SyncState.token, SyncState.repo, raw, SyncState.lastSha);
-    SyncState.lastSha = newSha;
-    SyncState.lastSyncAt = Date.now();
-    await saveSyncConfig();
-    setSyncStatus('idle');
-    if (opts.verbose) showToast('✓ Synced to GitHub');
+    await Cloud.pushData(state.data);
+    setCloudStatus('idle');
+    if (opts.verbose) showToast('✓ Saved to cloud');
   } catch (e) {
-    if (e.code === 'CONFLICT') {
-      setSyncStatus('error', 'Conflict — pull first');
-      if (opts.verbose) {
-        if (confirm('Another device pushed changes. Pull remote and overwrite local? (Cancel to keep local — you can manually resolve later.)')) {
-          await doSyncPull({ verbose: true, force: true });
-        }
-      } else {
-        showToast('⚠ Sync conflict — open Settings to resolve');
-      }
-    } else {
-      setSyncStatus('error', e.message);
-      if (opts.verbose) showToast('⚠ ' + e.message);
-    }
-  }
-}
-
-async function doSyncPull(opts = {}) {
-  if (!SyncState.enabled) return;
-  if (!navigator.onLine) { setSyncStatus('offline'); return; }
-  setSyncStatus('syncing');
-  try {
-    const remote = await GitHubSync.fetch(SyncState.token, SyncState.repo);
-    if (!remote) {
-      // No remote file yet — push our local up
-      if (opts.verbose) showToast('No remote data yet — pushing local…');
-      await doSyncPush({ verbose: opts.verbose });
-      return;
-    }
-
-    const localRaw = await Store.get('ledger-app-v1');
-    if (remote.content === localRaw && !opts.force) {
-      // Already in sync
-      SyncState.lastSha = remote.sha;
-      SyncState.lastSyncAt = Date.now();
-      await saveSyncConfig();
-      setSyncStatus('idle');
-      if (opts.verbose) showToast('✓ Already up to date');
-      return;
-    }
-
-    // Pull and replace local
-    await Store.set('ledger-app-v1', remote.content);
-    SyncState.lastSha = remote.sha;
-    SyncState.lastSyncAt = Date.now();
-    await saveSyncConfig();
-
-    // If the pulled data is encrypted and we're not unlocked yet,
-    // show the lock screen instead of trying to load
-    if (remote.content.startsWith('ENC1:') && !Session.unlocked) {
-      Session.encryptionEnabled = true;
-      showLockScreen();
-      setSyncStatus('idle');
-      return;
-    }
-
-    // Re-load app state from the new data
-    await loadData();
-    render();
-    setSyncStatus('idle');
-    if (opts.verbose) showToast('↓ Pulled latest from GitHub');
-  } catch (e) {
-    setSyncStatus('error', e.message);
+    setCloudStatus('error', e.message);
     if (opts.verbose) showToast('⚠ ' + e.message);
+    if (/sign in again|session expired/i.test(e.message)) {
+      handleSignedOut();
+    }
   }
 }
 
-// Listen for online/offline
+async function doCloudPull(opts = {}) {
+  if (!Cloud.isLoggedIn()) return;
+  if (!navigator.onLine) { setCloudStatus('offline'); return; }
+  setCloudStatus('syncing');
+  try {
+    const remote = await Cloud.pullData();
+    if (remote && typeof remote === 'object' && Object.keys(remote).length > 0) {
+      // Adopt remote data
+      state.data = {
+        transactions: remote.transactions || [],
+        budgets: remote.budgets || {},
+        categories: (remote.categories && remote.categories.length) ? remote.categories : DEFAULT_CATEGORIES.slice(),
+        settings: { ...state.data.settings, ...(remote.settings || {}) }
+      };
+      await persistLocal();
+      applyTheme(state.data.settings.theme || 'light');
+      render();
+      setCloudStatus('idle');
+      if (opts.verbose) showToast('↓ Loaded your data');
+    } else {
+      // New user with no cloud data yet — push whatever we have (defaults)
+      setCloudStatus('idle');
+      await doCloudPush();
+    }
+  } catch (e) {
+    setCloudStatus('error', e.message);
+    if (opts.verbose) showToast('⚠ ' + e.message);
+    if (/sign in again|session expired/i.test(e.message)) {
+      handleSignedOut();
+    }
+  }
+}
+
 if (typeof window !== 'undefined') {
-  window.addEventListener('online',  () => { if (SyncState.enabled) doSyncPull(); });
-  window.addEventListener('offline', () => { if (SyncState.enabled) setSyncStatus('offline'); });
+  window.addEventListener('online',  () => { if (Cloud.isLoggedIn()) doCloudPull(); });
+  window.addEventListener('offline', () => { if (Cloud.isLoggedIn()) setCloudStatus('offline'); });
+}
+
+// ============================================================
+// LOCAL PERSISTENCE (cache + offline fallback)
+// ============================================================
+async function persistLocal() {
+  await Store.set('ledger-app-v1', JSON.stringify(state.data));
 }
 
 async function loadData() {
   const raw = await Store.get('ledger-app-v1');
-
-  // Detect encryption from the data itself (not a separate flag)
-  // This makes encryption status correctly survive cross-device sync
-  Session.encryptionEnabled = !!(raw && raw.startsWith('ENC1:'));
-
-  // If encrypted and not unlocked, defer — lock screen handles it
-  if (Session.encryptionEnabled && !Session.unlocked) {
-    return;
-  }
-
-  let plaintext = raw;
-  if (Session.encryptionEnabled && Session.unlocked) {
+  if (raw) {
     try {
-      plaintext = await Crypto.decrypt(raw, Session.password);
-    } catch (e) {
-      console.warn('Decrypt failed', e);
-      return;
-    }
-  }
-
-  if (plaintext) {
-    try {
-      const parsed = JSON.parse(plaintext);
+      const parsed = JSON.parse(raw);
       state.data = {
         transactions: parsed.transactions || [],
         budgets: parsed.budgets || {},
@@ -2347,31 +2166,16 @@ async function loadData() {
         settings: { ...state.data.settings, ...(parsed.settings || {}) }
       };
     } catch (e) { console.warn('Failed to parse stored data', e); }
-  } else {
-    // First-time setup — apply the planned budget caps and monthly total
-    state.data.budgets = { ...DEFAULT_BUDGETS };
-    state.data.settings.monthlyBudget = DEFAULT_MONTHLY_BUDGET;
   }
 }
+
 async function saveData() {
-  const plaintext = JSON.stringify(state.data);
-  let payload = plaintext;
-  if (Session.encryptionEnabled && Session.password) {
-    try {
-      payload = await Crypto.encrypt(plaintext, Session.password);
-    } catch (e) {
-      showToast('⚠ Encryption failed — saving in plain text');
-      console.warn(e);
-    }
-  }
-  const ok = await Store.set('ledger-app-v1', payload);
-  if (!ok && Store.backend !== 'memory') {
-    showToast('⚠ Could not save — check storage in Settings');
-  }
-  // Push to GitHub sync (debounced)
-  scheduleSyncPush();
-  return ok;
+  // Save locally (cache + offline), then push to cloud
+  await persistLocal();
+  scheduleCloudPush();
+  return true;
 }
+
 
 // ============================================================
 // UTILS
@@ -3316,15 +3120,17 @@ function openSettings() {
   }
   statusEl.innerHTML = `<div style="color: ${color}; font-weight: 500; margin-bottom: 2px;">${label}</div><div style="font-size: 11px; line-height: 1.5;">${detail}</div>`;
 
-  // Sync row description + button label
-  const syncDesc = $('#syncRowDesc');
-  const syncBtn = $('#openSync');
-  if (SyncState.enabled) {
-    syncDesc.innerHTML = `<span style="color: var(--success); font-weight: 500;">● On</span> · ${SyncState.repo} · ${SyncState.lastSyncAt ? relativeTime(SyncState.lastSyncAt) : 'never synced'}`;
-    syncBtn.textContent = 'Manage';
-  } else {
-    syncDesc.textContent = 'Sync iPhone & laptop via your private GitHub repo';
-    syncBtn.textContent = 'Set up';
+  // Account row — show signed-in email
+  const acctDesc = $('#syncRowDesc');
+  const acctBtn = $('#openSync');
+  if (acctDesc && acctBtn) {
+    if (Cloud.isLoggedIn()) {
+      acctDesc.innerHTML = `<span style="color: var(--success); font-weight: 500;">● Signed in</span> · ${escapeHtml(Cloud.userEmail())}`;
+      acctBtn.textContent = 'Sign out';
+    } else {
+      acctDesc.textContent = 'Not signed in';
+      acctBtn.textContent = 'Sign in';
+    }
   }
 
   $('#settingsModal').classList.add('open');
@@ -3381,9 +3187,11 @@ async function importData(file) {
     state.data = {
       transactions: parsed.transactions,
       budgets: parsed.budgets || {},
+      categories: (parsed.categories && parsed.categories.length) ? parsed.categories : DEFAULT_CATEGORIES.slice(),
       settings: { ...state.data.settings, ...(parsed.settings || {}) }
     };
     await saveData();
+    applyTheme(state.data.settings.theme || 'light');
     render();
     $('#settingsModal').classList.remove('open');
     showToast('Backup restored');
@@ -3756,138 +3564,104 @@ const CATEGORY_PALETTE = [
 ];
 
 // ============================================================
-// SYNC MODAL UI
+// AUTH MODAL UI (sign in / sign up)
 // ============================================================
-function openSyncModal() {
-  $('#settingsModal').classList.remove('open');
-  $('#syncModal').classList.add('open');
-  $('#syncTestResult').style.display = 'none';
+let _authMode = 'signin'; // 'signin' | 'signup'
 
-  if (SyncState.enabled) {
-    // Already set up — show status + allow editing
-    $('#syncRepo').value = SyncState.repo;
-    $('#syncToken').value = ''; // never re-show token
-    $('#syncToken').placeholder = 'Leave blank to keep current token';
-    $('#syncCurrentStatus').style.display = 'block';
-    $('#syncStatusRepo').textContent = SyncState.repo;
-    $('#syncStatusTime').textContent = SyncState.lastSyncAt ? new Date(SyncState.lastSyncAt).toLocaleString() : 'never';
-    $('#syncStatusText').textContent = SyncState.status === 'error' ? 'Error' : (SyncState.status === 'syncing' ? 'Syncing…' : 'Active');
-    $('#syncDisable').style.display = 'inline-block';
-    $('#syncNow').style.display = 'inline-block';
-    $('#syncSave').textContent = 'Update';
-    // Surface the last error so the user knows what went wrong
-    if (SyncState.status === 'error' && SyncState.error) {
-      showSyncTest('error', '⚠ ' + SyncState.error);
-    } else if (SyncState.status === 'syncing') {
-      showSyncTest('error', 'Still syncing… if this is stuck, tap "Sync now" to see the error.');
-    }
-  } else {
-    $('#syncRepo').value = '';
-    $('#syncToken').value = '';
-    $('#syncToken').placeholder = 'github_pat_...';
-    $('#syncCurrentStatus').style.display = 'none';
-    $('#syncDisable').style.display = 'none';
-    $('#syncNow').style.display = 'none';
-    $('#syncSave').textContent = 'Test & enable';
-  }
+function showAuthScreen() {
+  document.getElementById('authScreen').style.display = 'flex';
+  document.getElementById('appRoot').style.display = 'none';
+  setAuthMode('signin');
+  setTimeout(() => { const el = $('#authEmail'); if (el) el.focus(); }, 50);
 }
 
-function closeSyncModal() { $('#syncModal').classList.remove('open'); }
+function hideAuthScreen() {
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('appRoot').style.display = '';
+}
 
-async function setupSync() {
-  const repo = $('#syncRepo').value.trim();
-  let token = $('#syncToken').value.trim();
+function setAuthMode(mode) {
+  _authMode = mode;
+  $('#authTitle').textContent = mode === 'signin' ? 'Welcome back' : 'Create your account';
+  $('#authSubmit').textContent = mode === 'signin' ? 'Sign in' : 'Sign up';
+  $('#authToggleText').innerHTML = mode === 'signin'
+    ? `New here? <button type="button" id="authToggle" class="auth-link">Create an account</button>`
+    : `Already have an account? <button type="button" id="authToggle" class="auth-link">Sign in</button>`;
+  $('#authToggle').addEventListener('click', () => setAuthMode(mode === 'signin' ? 'signup' : 'signin'));
+  $('#authError').style.display = 'none';
+  $('#authInfo').style.display = 'none';
+}
 
-  if (!repo) {
-    showSyncTest('error', 'Enter a repository (format: owner/name)');
-    return;
-  }
-  if (!token && !SyncState.token) {
-    showSyncTest('error', 'Paste your access token');
-    return;
-  }
-  if (!token) token = SyncState.token;
+function showAuthError(msg) {
+  const el = $('#authError');
+  el.style.display = 'block';
+  el.textContent = '⚠ ' + msg;
+  $('#authInfo').style.display = 'none';
+}
+function showAuthInfo(msg) {
+  const el = $('#authInfo');
+  el.style.display = 'block';
+  el.textContent = msg;
+  $('#authError').style.display = 'none';
+}
 
-  $('#syncSave').disabled = true;
-  $('#syncSave').textContent = 'Testing…';
+async function submitAuth() {
+  const email = $('#authEmail').value.trim();
+  const password = $('#authPassword').value;
+  if (!email || !email.includes('@')) { showAuthError('Enter a valid email'); return; }
+  if (!password || password.length < 6) { showAuthError('Password must be at least 6 characters'); return; }
+
+  $('#authSubmit').disabled = true;
+  const originalText = $('#authSubmit').textContent;
+  $('#authSubmit').textContent = 'Please wait…';
 
   try {
-    const repoInfo = await GitHubSync.test(token, repo);
-    if (!repoInfo.private) {
-      if (!confirm('⚠ This repo is PUBLIC. Anyone could read your data unless password protection is also enabled. Continue?')) {
-        $('#syncSave').disabled = false;
-        $('#syncSave').textContent = 'Test & enable';
+    if (_authMode === 'signup') {
+      const result = await Cloud.signUp(email, password);
+      if (!result.confirmed) {
+        showAuthInfo('Account created! Check your email to confirm, then sign in.');
+        setTimeout(() => setAuthMode('signin'), 300);
         return;
       }
-    }
-
-    showSyncTest('success', `✓ Connected to ${repoInfo.full_name}`);
-
-    SyncState.enabled = true;
-    SyncState.token = token;
-    SyncState.repo = repo;
-    await saveSyncConfig();
-
-    // First time setup — pull existing remote data or push local
-    setSyncStatus('syncing');
-    const remote = await GitHubSync.fetch(token, repo);
-    if (remote && remote.content && remote.content.length > 10) {
-      // Remote has data
-      const localRaw = await Store.get('ledger-app-v1');
-      const hasLocalData = localRaw && state.data.transactions.length > 0;
-      if (hasLocalData && remote.content !== localRaw) {
-        const choice = confirm('Remote already has data. OK = use remote (your local data will be replaced). Cancel = push your local data and overwrite remote.');
-        if (choice) {
-          await doSyncPull({ verbose: true, force: true });
-        } else {
-          // Push local, overwriting remote
-          SyncState.lastSha = remote.sha;
-          await doSyncPush({ verbose: true });
-        }
-      } else {
-        await doSyncPull({ verbose: true, force: true });
-      }
+      // Signed up + auto-confirmed → logged in
+      await onAuthSuccess(true);
     } else {
-      // First push
-      await doSyncPush({ verbose: true });
+      await Cloud.signIn(email, password);
+      await onAuthSuccess(false);
     }
-
-    closeSyncModal();
-    showToast('✓ Sync enabled');
   } catch (e) {
-    showSyncTest('error', '⚠ ' + e.message);
-    SyncState.enabled = false;
+    showAuthError(e.message);
   } finally {
-    $('#syncSave').disabled = false;
-    $('#syncSave').textContent = SyncState.enabled ? 'Update' : 'Test & enable';
+    $('#authSubmit').disabled = false;
+    $('#authSubmit').textContent = originalText;
   }
 }
 
-function showSyncTest(kind, message) {
-  const el = $('#syncTestResult');
-  el.style.display = 'block';
-  if (kind === 'success') {
-    el.style.background = 'var(--accent-soft)';
-    el.style.color = 'var(--accent)';
-  } else {
-    el.style.background = 'var(--danger-soft)';
-    el.style.color = 'var(--danger)';
-  }
-  el.textContent = message;
+async function onAuthSuccess(isNewUser) {
+  hideAuthScreen();
+  // Load local cache first for instant render, then pull cloud
+  await loadData();
+  applyTheme(state.data.settings.theme || 'light');
+  render();
+  renderCloudIndicator();
+  showToast('Signed in as ' + Cloud.userEmail());
+  // Pull cloud data (will adopt remote if it exists, else push our defaults)
+  await doCloudPull({ verbose: false });
 }
 
-async function disableSync() {
-  if (!confirm('Turn off sync? Your local data stays put; the remote file is left alone but no longer updated.')) return;
-  SyncState.enabled = false;
-  SyncState.token = '';
-  SyncState.repo = '';
-  SyncState.lastSha = null;
-  SyncState.lastSyncAt = null;
-  await saveSyncConfig();
-  closeSyncModal();
-  renderSyncIndicator();
-  showToast('Sync disabled');
+async function signOut() {
+  if (!confirm('Sign out? Your data stays safe in the cloud and on this device.')) return;
+  await Cloud.signOut();
+  handleSignedOut();
 }
+
+function handleSignedOut() {
+  Cloud._clearSession();
+  renderCloudIndicator();
+  $('#settingsModal').classList.remove('open');
+  showAuthScreen();
+}
+
 
 function openCategoriesModal() {
   $('#settingsModal').classList.remove('open');
@@ -4031,141 +3805,14 @@ async function deleteCategory() {
   showToast('Category removed');
 }
 
-// ============================================================
-// PASSWORD / LOCK SCREEN
-// ============================================================
-function showLockScreen() {
-  $('#lockScreen').style.display = 'flex';
-  $('#lockError').textContent = '';
-  $('#lockPassword').value = '';
-  setTimeout(() => $('#lockPassword').focus(), 100);
-}
-
-function hideLockScreen() {
-  $('#lockScreen').style.display = 'none';
-}
-
-async function attemptUnlock() {
-  const pw = $('#lockPassword').value;
-  if (!pw) {
-    $('#lockError').textContent = 'Enter your password';
-    return;
-  }
-  const raw = await Store.get('ledger-app-v1');
-  if (!raw || !raw.startsWith('ENC1:')) {
-    Session.password = pw;
-    Session.unlocked = true;
-    hideLockScreen();
-    render();
-    return;
-  }
-  try {
-    const plaintext = await Crypto.decrypt(raw, pw);
-    JSON.parse(plaintext);
-    Session.password = pw;
-    Session.unlocked = true;
-    await loadData();
-    hideLockScreen();
-    render();
-    renderSyncIndicator();
-    if (SyncState.enabled) {
-      setTimeout(() => doSyncPull(), 600);
-    }
-  } catch (e) {
-    $('#lockError').textContent = 'Wrong password';
-    $('#lockPassword').value = '';
-    $('#lockPassword').focus();
-  }
-}
-
-async function forgotPassword() {
-  if (!confirm('If you forgot your password, the only option is to ERASE all data and start fresh. Continue?')) return;
-  if (!confirm('This will permanently delete all encrypted data. Are you sure?')) return;
-  await Store.set('ledger-app-v1', '');
-  await Store.set('ledger-enc-flag', 'false');
-  Session.encryptionEnabled = false;
-  Session.unlocked = true;
-  Session.password = null;
-  state.data = { transactions: [], budgets: { ...DEFAULT_BUDGETS }, categories: DEFAULT_CATEGORIES.slice(), settings: { currency: 'SAR', monthlyBudget: DEFAULT_MONTHLY_BUDGET, weekStart: 0, theme: 'light' } };
-  await saveData();
-  hideLockScreen();
-  render();
-  showToast('Data reset');
-}
-
-function openPwSetup() {
-  $('#settingsModal').classList.remove('open');
-  const isChange = Session.encryptionEnabled;
-  $('#pwModalTitle').textContent = isChange ? 'Change password' : 'Enable password';
-  $('#pwIntro').style.display = isChange ? 'none' : 'block';
-  $('#pwOldField').style.display = isChange ? 'block' : 'none';
-  $('#pwNewLabel').textContent = isChange ? 'New password (leave blank to disable)' : 'Password';
-  $('#pwOld').value = '';
-  $('#pwNew').value = '';
-  $('#pwConfirm').value = '';
-  $('#pwError').textContent = '';
-  $('#pwModal').classList.add('open');
-  setTimeout(() => (isChange ? $('#pwOld') : $('#pwNew')).focus(), 50);
-}
-
-async function savePassword() {
-  const isChange = Session.encryptionEnabled;
-  const newPw = $('#pwNew').value;
-  const confirmPw = $('#pwConfirm').value;
-  const errEl = $('#pwError');
-  errEl.textContent = '';
-
-  if (isChange) {
-    const oldPw = $('#pwOld').value;
-    if (oldPw !== Session.password) {
-      errEl.textContent = 'Current password is incorrect';
-      return;
-    }
-  }
-
-  if (newPw === '' && isChange) {
-    if (!confirm('Remove password protection? Your data will be stored unencrypted.')) return;
-    Session.encryptionEnabled = false;
-    await Store.set('ledger-enc-flag', 'false');
-    await saveData();
-    $('#pwModal').classList.remove('open');
-    showToast('Password removed');
-    updatePwStatus();
-    return;
-  }
-
-  if (newPw.length < 6) {
-    errEl.textContent = 'Password must be at least 6 characters';
-    return;
-  }
-  if (newPw !== confirmPw) {
-    errEl.textContent = 'Passwords do not match';
-    return;
-  }
-
-  Session.password = newPw;
-  Session.encryptionEnabled = true;
-  Session.unlocked = true;
-  await Store.set('ledger-enc-flag', 'true');
-  await saveData();
-  $('#pwModal').classList.remove('open');
-  showToast(isChange ? 'Password updated' : 'Password protection enabled');
-  updatePwStatus();
-}
-
+// (Password/lock-screen system removed — auth is now handled by Supabase)
 function updatePwStatus() {
   const desc = $('#pwStatusDesc');
   const btn = $('#openPwSetup');
   if (!desc || !btn) return;
-  if (Session.encryptionEnabled) {
-    desc.textContent = 'On — your data is encrypted';
-    desc.style.color = 'var(--success)';
-    btn.textContent = 'Change';
-  } else {
-    desc.textContent = 'Off — anyone with the URL can see your data';
-    desc.style.color = 'var(--ink-muted)';
-    btn.textContent = 'Enable';
-  }
+  desc.textContent = 'Your account is protected by your sign-in password';
+  desc.style.color = 'var(--ink-muted)';
+  btn.style.display = 'none';
 }
 
 function bindEvents() {
@@ -4219,30 +3866,21 @@ function bindEvents() {
   $('#openCategories').addEventListener('click', openCategoriesModal);
   $('#testStorageBtn').addEventListener('click', testStorage);
 
-  // Sync
-  $('#openSync').addEventListener('click', openSyncModal);
-  $('#syncIndicator').addEventListener('click', openSyncModal);
-  $('#syncModalClose').addEventListener('click', closeSyncModal);
-  $('#syncCancel').addEventListener('click', closeSyncModal);
-  $('#syncModal').addEventListener('click', (e) => { if (e.target === $('#syncModal')) closeSyncModal(); });
-  $('#syncSave').addEventListener('click', setupSync);
-  $('#syncDisable').addEventListener('click', disableSync);
-  $('#syncNow').addEventListener('click', async () => {
-    await doSyncPull({ verbose: true });
-    await doSyncPush({ verbose: true });
+  // Account (was Sync)
+  $('#openSync').addEventListener('click', () => {
+    if (Cloud.isLoggedIn()) signOut();
+    else showAuthScreen();
   });
-  $('#openPwSetup').addEventListener('click', openPwSetup);
+  $('#syncIndicator').addEventListener('click', () => {
+    // Tapping the indicator shows account status / lets you retry a failed sync
+    if (Cloud.status === 'error') { doCloudPull({ verbose: true }); }
+    else openSettings();
+  });
 
-  // Password modal
-  $('#pwClose').addEventListener('click', () => $('#pwModal').classList.remove('open'));
-  $('#pwCancel').addEventListener('click', () => $('#pwModal').classList.remove('open'));
-  $('#pwSave').addEventListener('click', savePassword);
-  $('#pwModal').addEventListener('click', (e) => { if (e.target === $('#pwModal')) $('#pwModal').classList.remove('open'); });
-
-  // Lock screen
-  $('#lockUnlock').addEventListener('click', attemptUnlock);
-  $('#lockPassword').addEventListener('keydown', (e) => { if (e.key === 'Enter') attemptUnlock(); });
-  $('#lockForgot').addEventListener('click', forgotPassword);
+  // Auth screen
+  $('#authSubmit').addEventListener('click', submitAuth);
+  $('#authPassword').addEventListener('keydown', (e) => { if (e.key === 'Enter') submitAuth(); });
+  $('#authEmail').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#authPassword').focus(); });
 
   // SMS modal
   $('#openSmsFromTx').addEventListener('click', () => {
@@ -4301,55 +3939,24 @@ function bindEvents() {
 // ============================================================
 async function init() {
   await Store.init();
-  await loadSyncConfig();
-
-  // If sync is enabled and we have no local data yet, pull from remote FIRST
-  // (so encryption detection sees the synced data, not empty local storage)
-  let raw = await Store.get('ledger-app-v1');
-  if (SyncState.enabled && (!raw || raw.length < 5)) {
-    try {
-      const remote = await GitHubSync.fetch(SyncState.token, SyncState.repo);
-      if (remote && remote.content) {
-        await Store.set('ledger-app-v1', remote.content);
-        SyncState.lastSha = remote.sha;
-        SyncState.lastSyncAt = Date.now();
-        await saveSyncConfig();
-        raw = remote.content;
-      }
-    } catch (e) {
-      console.warn('[Ledger] Initial sync pull failed:', e);
-    }
-  }
-
-  // Detect encryption from the data prefix itself (not a separate flag)
-  // This makes encryption survive cross-device sync automatically
-  Session.encryptionEnabled = !!(raw && raw.startsWith('ENC1:'));
-
-  if (Session.encryptionEnabled) {
-    // Show lock screen — defer loading data until unlocked
-    applyTheme('light'); // default until we can load settings
-    bindEvents();
-    showLockScreen();
-    return;
-  }
-
-  await loadData();
-  applyTheme(state.data.settings.theme || 'light');
   bindEvents();
-  render();
-  renderSyncIndicator();
 
-  if (Store.backend === 'memory') {
-    setTimeout(() => {
-      showToast('⚠ Data is not persisting — see Settings');
-    }, 800);
-  }
+  // Try to restore a saved Supabase session
+  const hasSession = await Cloud.loadStoredSession();
 
-  // After initial render, also fetch from sync to catch any updates
-  // (we already pulled if local was empty; this catches the case where
-  // local had data but remote was updated since)
-  if (SyncState.enabled) {
-    setTimeout(() => doSyncPull(), 600);
+  if (hasSession && Cloud.isLoggedIn()) {
+    // Signed in — load cached data for instant render, then sync from cloud
+    await loadData();
+    applyTheme(state.data.settings.theme || 'light');
+    hideAuthScreen();
+    render();
+    renderCloudIndicator();
+    // Pull latest from cloud (adopts remote if present)
+    setTimeout(() => doCloudPull({ verbose: false }), 300);
+  } else {
+    // Not signed in — show the auth screen
+    applyTheme('light');
+    showAuthScreen();
   }
 }
 
