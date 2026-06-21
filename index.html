@@ -1048,9 +1048,31 @@
   }
 
   @media (max-width: 600px) {
-    .masthead { padding: 14px 18px; gap: 12px; }
+    /* Two-row header: brand + icons on top, month nav below full-width.
+       This guarantees the settings gear and theme toggle are never pushed off-screen. */
+    .masthead {
+      padding: 12px 16px;
+      padding-top: max(12px, env(safe-area-inset-top));
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .brand { flex: 0 0 auto; }
     .brand-tag { display: none; }
-    .month-display { min-width: 140px; font-size: 16px; }
+    .head-actions {
+      margin-left: auto;
+      flex: 0 0 auto;
+      gap: 2px;
+    }
+    .month-nav {
+      order: 3;            /* push to second row */
+      flex: 1 0 100%;      /* take full width on its own line */
+      margin-left: 0;
+      justify-content: space-between;
+      padding-top: 8px;
+      border-top: 1px solid var(--divider);
+    }
+    .month-display { min-width: 0; flex: 1; font-size: 17px; }
+
     .main { padding: 24px 18px calc(120px + env(safe-area-inset-bottom)); }
     .hero-primary { padding: 24px; }
     .hero-amount { font-size: 48px; }
@@ -1969,6 +1991,7 @@ const state = {
 const GitHubSync = {
   API: 'https://api.github.com',
   FILE_PATH: 'ledger-data.json',
+  TIMEOUT_MS: 15000,
 
   _headers(token) {
     return {
@@ -1978,28 +2001,65 @@ const GitHubSync = {
     };
   },
 
+  // fetch with a hard timeout so the UI never hangs on "Syncing…" forever
+  async _fetch(url, options = {}) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.TIMEOUT_MS);
+    try {
+      const res = await fetch(url, { ...options, signal: controller.signal });
+      return res;
+    } catch (e) {
+      if (e.name === 'AbortError') {
+        throw new Error('Timed out after 15s — check your internet connection');
+      }
+      // Network-level failure (DNS, offline, CORS, etc.)
+      throw new Error('Network error reaching GitHub — check your connection');
+    } finally {
+      clearTimeout(timer);
+    }
+  },
+
+  // Turn a non-ok response into a clear, specific error
+  async _explainError(res, context) {
+    let detail = '';
+    try {
+      const body = await res.json();
+      detail = body.message || '';
+    } catch (e) {}
+    if (res.status === 401) throw new Error('Token is invalid or expired — generate a new one');
+    if (res.status === 403) {
+      if (/rate limit/i.test(detail)) throw new Error('GitHub rate limit hit — wait a few minutes');
+      throw new Error('Token lacks permission. It needs Contents: Read AND Write on this repo');
+    }
+    if (res.status === 404) throw new Error('Repo not found. Check the name (owner/repo) and that the token can access it');
+    if (res.status === 422) throw new Error('GitHub rejected the request: ' + (detail || 'unprocessable'));
+    throw new Error(context + ' failed (' + res.status + ')' + (detail ? ': ' + detail : ''));
+  },
+
   // Verify token + repo are valid. Returns repo info.
   async test(token, repo) {
     if (!token || !repo) throw new Error('Token and repo are required');
     if (!repo.includes('/')) throw new Error('Repo must be in format owner/name');
-    const res = await fetch(this.API + '/repos/' + repo, {
+    const res = await this._fetch(this.API + '/repos/' + repo, {
       headers: this._headers(token)
     });
-    if (res.status === 401) throw new Error('Token is invalid or expired');
-    if (res.status === 403) throw new Error('Token does not have access to this repo');
-    if (res.status === 404) throw new Error('Repo not found (check the spelling, and that the token can access private repos)');
-    if (!res.ok) throw new Error('GitHub API error ' + res.status);
-    return await res.json();
+    if (!res.ok) await this._explainError(res, 'Connection test');
+    const info = await res.json();
+    // Also verify we actually have write permission
+    if (info.permissions && !info.permissions.push) {
+      throw new Error('This token can READ but not WRITE to the repo. Regenerate it with Contents: Read and write');
+    }
+    return info;
   },
 
   // Fetch the data file. Returns {content, sha} or null if not yet created.
   async fetch(token, repo) {
-    const res = await fetch(this.API + '/repos/' + repo + '/contents/' + this.FILE_PATH, {
+    const res = await this._fetch(this.API + '/repos/' + repo + '/contents/' + this.FILE_PATH + '?t=' + Date.now(), {
       headers: this._headers(token),
       cache: 'no-store'
     });
     if (res.status === 404) return null;
-    if (!res.ok) throw new Error('Fetch failed (' + res.status + ')');
+    if (!res.ok) await this._explainError(res, 'Fetch');
     const json = await res.json();
     return {
       content: decodeBase64Utf8(json.content || ''),
@@ -2009,23 +2069,43 @@ const GitHubSync = {
 
   // Create or update the file. Returns new sha.
   async push(token, repo, content, sha = null) {
+    // If we don't have a sha but the file may already exist, fetch it first
+    // (prevents the common "sha wasn't supplied" 422 error)
+    if (!sha) {
+      try {
+        const existing = await this.fetch(token, repo);
+        if (existing && existing.sha) sha = existing.sha;
+      } catch (e) { /* file may not exist yet — that's fine */ }
+    }
     const body = {
       message: 'Sync from Ledger · ' + new Date().toISOString(),
       content: encodeBase64Utf8(content)
     };
     if (sha) body.sha = sha;
-    const res = await fetch(this.API + '/repos/' + repo + '/contents/' + this.FILE_PATH, {
+    const res = await this._fetch(this.API + '/repos/' + repo + '/contents/' + this.FILE_PATH, {
       method: 'PUT',
       headers: { ...this._headers(token), 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      if (res.status === 409 || (res.status === 422 && /sha/i.test(err.message || ''))) {
-        const conflictErr = new Error('Remote has newer changes');
-        conflictErr.code = 'CONFLICT';
-        throw conflictErr;
+      let err = {};
+      try { err = await res.json(); } catch (e) {}
+      // If sha is stale, fetch latest and retry once
+      if ((res.status === 409 || res.status === 422) && /sha/i.test(err.message || '') && !this._retrying) {
+        this._retrying = true;
+        try {
+          const latest = await this.fetch(token, repo);
+          const newSha = await this.push(token, repo, content, latest ? latest.sha : null);
+          this._retrying = false;
+          return newSha;
+        } catch (retryErr) {
+          this._retrying = false;
+          throw retryErr;
+        }
       }
+      if (res.status === 401) throw new Error('Token is invalid or expired — generate a new one');
+      if (res.status === 403) throw new Error('Token lacks WRITE permission. It needs Contents: Read AND Write');
+      if (res.status === 404) throw new Error('Repo not found. Check the name and token access');
       throw new Error(err.message || 'Push failed (' + res.status + ')');
     }
     const result = await res.json();
@@ -3685,6 +3765,12 @@ function openSyncModal() {
     $('#syncDisable').style.display = 'inline-block';
     $('#syncNow').style.display = 'inline-block';
     $('#syncSave').textContent = 'Update';
+    // Surface the last error so the user knows what went wrong
+    if (SyncState.status === 'error' && SyncState.error) {
+      showSyncTest('error', '⚠ ' + SyncState.error);
+    } else if (SyncState.status === 'syncing') {
+      showSyncTest('error', 'Still syncing… if this is stuck, tap "Sync now" to see the error.');
+    }
   } else {
     $('#syncRepo').value = '';
     $('#syncToken').value = '';
