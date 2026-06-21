@@ -1990,7 +1990,7 @@ const state = {
 
 const GitHubSync = {
   API: 'https://api.github.com',
-  FILE_PATH: 'ledger-data.json',
+  FILE_PATH: 'data.json', // updated dynamically by fetch() to whichever file exists
   TIMEOUT_MS: 15000,
 
   _headers(token) {
@@ -2052,19 +2052,29 @@ const GitHubSync = {
     return info;
   },
 
-  // Fetch the data file. Returns {content, sha} or null if not yet created.
+  // Filenames to try, in order (handles data created by older app versions)
+  FILE_CANDIDATES: ['data.json', 'ledger-data.json'],
+
+  // Fetch the data file. Returns {content, sha, path} or null if not yet created.
   async fetch(token, repo) {
-    const res = await this._fetch(this.API + '/repos/' + repo + '/contents/' + this.FILE_PATH + '?t=' + Date.now(), {
-      headers: this._headers(token),
-      cache: 'no-store'
-    });
-    if (res.status === 404) return null;
-    if (!res.ok) await this._explainError(res, 'Fetch');
-    const json = await res.json();
-    return {
-      content: decodeBase64Utf8(json.content || ''),
-      sha: json.sha
-    };
+    // Try the primary path first, then any fallback names
+    for (const path of this.FILE_CANDIDATES) {
+      const res = await this._fetch(this.API + '/repos/' + repo + '/contents/' + path + '?t=' + Date.now(), {
+        headers: this._headers(token),
+        cache: 'no-store'
+      });
+      if (res.status === 404) continue; // try next candidate
+      if (!res.ok) { await this._explainError(res, 'Fetch'); }
+      const json = await res.json();
+      // Remember which file we actually found, so we write back to the same one
+      this.FILE_PATH = path;
+      return {
+        content: decodeBase64Utf8(json.content || ''),
+        sha: json.sha,
+        path: path
+      };
+    }
+    return null; // none of the candidates exist yet
   },
 
   // Create or update the file. Returns new sha.
