@@ -1846,6 +1846,7 @@ const Session = {
 };
 
 
+const memStore = {};
 const Store = {
   backend: 'memory', // 'window' | 'local' | 'memory'
   ready: false,
@@ -2198,6 +2199,15 @@ async function doSyncPull(opts = {}) {
     SyncState.lastSyncAt = Date.now();
     await saveSyncConfig();
 
+    // If the pulled data is encrypted and we're not unlocked yet,
+    // show the lock screen instead of trying to load
+    if (remote.content.startsWith('ENC1:') && !Session.unlocked) {
+      Session.encryptionEnabled = true;
+      showLockScreen();
+      setSyncStatus('idle');
+      return;
+    }
+
     // Re-load app state from the new data
     await loadData();
     render();
@@ -2216,19 +2226,19 @@ if (typeof window !== 'undefined') {
 }
 
 async function loadData() {
-  // Check if encryption is enabled (this flag itself is never encrypted)
-  const encFlag = await Store.get('ledger-enc-flag');
-  Session.encryptionEnabled = encFlag === 'true';
-
   const raw = await Store.get('ledger-app-v1');
 
-  // If encrypted, we can't load until unlocked
-  if (Session.encryptionEnabled && raw && raw.startsWith('ENC1:') && !Session.unlocked) {
-    return; // Lock screen will handle prompt
+  // Detect encryption from the data itself (not a separate flag)
+  // This makes encryption status correctly survive cross-device sync
+  Session.encryptionEnabled = !!(raw && raw.startsWith('ENC1:'));
+
+  // If encrypted and not unlocked, defer — lock screen handles it
+  if (Session.encryptionEnabled && !Session.unlocked) {
+    return;
   }
 
   let plaintext = raw;
-  if (Session.encryptionEnabled && raw && raw.startsWith('ENC1:') && Session.unlocked) {
+  if (Session.encryptionEnabled && Session.unlocked) {
     try {
       plaintext = await Crypto.decrypt(raw, Session.password);
     } catch (e) {
@@ -4197,9 +4207,27 @@ async function init() {
   await Store.init();
   await loadSyncConfig();
 
-  // Check encryption flag BEFORE loading data
-  const encFlag = await Store.get('ledger-enc-flag');
-  Session.encryptionEnabled = encFlag === 'true';
+  // If sync is enabled and we have no local data yet, pull from remote FIRST
+  // (so encryption detection sees the synced data, not empty local storage)
+  let raw = await Store.get('ledger-app-v1');
+  if (SyncState.enabled && (!raw || raw.length < 5)) {
+    try {
+      const remote = await GitHubSync.fetch(SyncState.token, SyncState.repo);
+      if (remote && remote.content) {
+        await Store.set('ledger-app-v1', remote.content);
+        SyncState.lastSha = remote.sha;
+        SyncState.lastSyncAt = Date.now();
+        await saveSyncConfig();
+        raw = remote.content;
+      }
+    } catch (e) {
+      console.warn('[Ledger] Initial sync pull failed:', e);
+    }
+  }
+
+  // Detect encryption from the data prefix itself (not a separate flag)
+  // This makes encryption survive cross-device sync automatically
+  Session.encryptionEnabled = !!(raw && raw.startsWith('ENC1:'));
 
   if (Session.encryptionEnabled) {
     // Show lock screen — defer loading data until unlocked
@@ -4221,7 +4249,9 @@ async function init() {
     }, 800);
   }
 
-  // Try to pull from sync after a small delay (don't block initial render)
+  // After initial render, also fetch from sync to catch any updates
+  // (we already pulled if local was empty; this catches the case where
+  // local had data but remote was updated since)
   if (SyncState.enabled) {
     setTimeout(() => doSyncPull(), 600);
   }
