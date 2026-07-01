@@ -1544,6 +1544,12 @@
         <svg style="vertical-align: -3px; margin-right: 4px;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
         New category
       </button>
+      <button class="btn btn-ghost" id="restoreCategoriesBtn" style="width: 100%; margin-top: 8px; font-size: 12px;">
+        Restore default categories
+      </button>
+      <div style="font-size: 11px; color: var(--ink-faint); margin-top: 6px; line-height: 1.5; text-align: center;">
+        Adds any missing default categories without removing yours or your data.
+      </div>
     </div>
   </div>
 </div>
@@ -1903,6 +1909,13 @@ const DEFAULT_CATEGORIES = [
   { id: 'baby_clothes', name: 'ملابس مسك',          emoji: '👶',  color: '#C09A5C', type: 'expense' },
   { id: 'food',         name: 'مطاعم',              emoji: '🍽️', color: '#C97B49', type: 'expense' },
   { id: 'health',       name: 'صحة',                emoji: '💊',  color: '#5A9B8E', type: 'expense' },
+  { id: 'shopping',     name: 'تسوّق',              emoji: '🛍️', color: '#B86F8F', type: 'expense' },
+  { id: 'entertainment',name: 'ترفيه',              emoji: '🎬',  color: '#8B6BA8', type: 'expense' },
+  { id: 'education',    name: 'تعليم',              emoji: '📚',  color: '#6B7DB8', type: 'expense' },
+  { id: 'gifts',        name: 'هدايا',              emoji: '🎁',  color: '#D08585', type: 'expense' },
+  { id: 'subscriptions',name: 'اشتراكات',           emoji: '🔁',  color: '#9A8B6B', type: 'expense' },
+  { id: 'home',         name: 'البيت',              emoji: '🏡',  color: '#7A9966', type: 'expense' },
+  { id: 'personal',     name: 'شخصي',               emoji: '💅',  color: '#A88FB0', type: 'expense' },
   { id: 'salary',       name: 'الراتب',             emoji: '💼',  color: '#3A7A4A', type: 'income'  },
   { id: 'other_income', name: 'دخل آخر',            emoji: '💰',  color: '#5C8A6A', type: 'income'  },
   { id: 'other',        name: 'أخرى',               emoji: '📦',  color: '#8B8378', type: 'expense' },
@@ -4018,7 +4031,7 @@ function openOneTimeModal(itemId = null) {
     $('#oneTimeAmount').value = '';
     // Default to next cycle
     if (opts[1]) $('#oneTimeCycle').value = opts[1].key;
-    _oneTimeCat = getExpenseCategories()[0]?.id || 'other';
+    _oneTimeCat = 'none';
     $('#oneTimeDelete').style.display = 'none';
   }
   renderOneTimeCatGrid();
@@ -4026,10 +4039,16 @@ function openOneTimeModal(itemId = null) {
   setTimeout(() => $('#oneTimeName').focus(), 50);
 }
 
-let _oneTimeCat = 'other';
+let _oneTimeCat = 'none';
 function renderOneTimeCatGrid() {
   const cats = getExpenseCategories();
-  $('#oneTimeCatGrid').innerHTML = cats.map(c => `
+  // "بدون فئة" option first, then all expense categories
+  const noneBtn = `
+    <button class="cat-opt ${_oneTimeCat === 'none' ? 'selected' : ''}" data-cat="none" type="button">
+      <span class="cat-opt-emoji">📝</span>
+      <span>بدون فئة</span>
+    </button>`;
+  $('#oneTimeCatGrid').innerHTML = noneBtn + cats.map(c => `
     <button class="cat-opt ${c.id === _oneTimeCat ? 'selected' : ''}" data-cat="${c.id}" type="button">
       <span class="cat-opt-emoji">${c.emoji}</span>
       <span>${escapeHtml(c.name)}</span>
@@ -4111,7 +4130,8 @@ function renderOneTimeList() {
     return;
   }
   list.innerHTML = items.map(it => {
-    const cat = getCat(it.category);
+    const isNone = it.category === 'none' || !it.category;
+    const cat = isNone ? { emoji: '📝', color: '#8B8378', name: 'بدون فئة' } : getCat(it.category);
     const done = !!it.done;
     return `
       <div style="display:flex; align-items:center; gap:10px; padding:12px; background:var(--bg-subtle); border-radius:var(--radius); ${done ? 'opacity:0.55;' : ''}" data-ot="${it.id}">
@@ -4557,6 +4577,22 @@ function handleSignedOut() {
 }
 
 
+async function restoreDefaultCategories() {
+  const existing = new Set((state.data.categories || []).map(c => c.id));
+  const missing = DEFAULT_CATEGORIES.filter(c => !existing.has(c.id));
+  if (missing.length === 0) {
+    showToast('All default categories are already present');
+    return;
+  }
+  // Add missing defaults; keep all existing categories and data untouched
+  state.data.categories = [...(state.data.categories || []), ...missing];
+  // Keep 'other' / income at sensible spots is not critical; order by type
+  await saveData();
+  renderCategoriesList();
+  render();
+  showToast(`Added ${missing.length} categor${missing.length === 1 ? 'y' : 'ies'}`);
+}
+
 function openCategoriesModal() {
   $('#settingsModal').classList.remove('open');
   $('#categoriesModal').classList.add('open');
@@ -4792,6 +4828,7 @@ function bindEvents() {
   $('#categoriesModalClose').addEventListener('click', closeCategoriesModal);
   $('#categoriesModal').addEventListener('click', (e) => { if (e.target === $('#categoriesModal')) closeCategoriesModal(); });
   $('#addCategoryBtn').addEventListener('click', () => openCategoryEditor(null));
+  $('#restoreCategoriesBtn').addEventListener('click', restoreDefaultCategories);
 
   // Savings goals
   $('#addGoalBtn').addEventListener('click', () => openGoalEditor(null));
