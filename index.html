@@ -3826,6 +3826,7 @@ function renderSavings() {
     } else {
       progressHtml = `<div style="font-size:11px; color:var(--ink-muted); margin-top:6px;">${monthly > 0 ? `+${fmtAmountMono(monthly)} each cycle` : 'no monthly amount set'}</div>`;
     }
+    const historyCount = (goal.history || []).length;
     return `
       <div class="panel" style="padding:20px;" data-goal-id="${goal.id}">
         <div style="display:flex; align-items:flex-start; gap:14px;">
@@ -3844,6 +3845,11 @@ function renderSavings() {
           <button class="btn btn-secondary goal-action" data-goal="${goal.id}" data-action="withdraw" style="flex:1; font-size:12px; padding:8px;">− Withdraw</button>
           <button class="btn btn-ghost goal-action" data-goal="${goal.id}" data-action="reset" style="flex:1; font-size:12px; padding:8px;">Reset</button>
         </div>
+        <button class="goal-history-toggle" data-goal="${goal.id}" style="width:100%; margin-top:10px; font-size:12px; color:var(--accent); padding:6px; display:flex; align-items:center; justify-content:center; gap:6px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          السجل والملاحظات (${historyCount})
+        </button>
+        <div class="goal-history" id="history-${goal.id}" style="display:none; margin-top:8px; border-top:1px solid var(--divider); padding-top:12px;"></div>
       </div>`;
   }).join('');
 
@@ -3856,6 +3862,77 @@ function renderSavings() {
     e.stopPropagation();
     openGoalTx(b.dataset.goal, b.dataset.action);
   }));
+  list.querySelectorAll('.goal-history-toggle').forEach(b => b.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleGoalHistory(b.dataset.goal);
+  }));
+}
+
+function toggleGoalHistory(goalId) {
+  const el = document.getElementById('history-' + goalId);
+  if (!el) return;
+  if (el.style.display === 'none') {
+    renderGoalHistory(goalId, el);
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+function renderGoalHistory(goalId, el) {
+  const goal = state.data.savingsGoals.find(g => g.id === goalId);
+  if (!goal) return;
+  const history = (goal.history || []).slice().reverse(); // newest first
+
+  let rows = '';
+  // Show the starting amount as the base entry
+  if (goal.initialAmount && goal.initialAmount > 0) {
+    rows += `
+      <div style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--divider);">
+        <div style="width:26px; height:26px; border-radius:6px; background:var(--bg-subtle); display:grid; place-items:center; font-size:13px; flex-shrink:0;">🏦</div>
+        <div style="flex:1; min-width:0;">
+          <div style="font-size:13px; font-weight:500;">مبلغ ابتدائي</div>
+        </div>
+        <div class="amount-mono" style="font-size:13px; color:var(--success);">+${fmtAmountMono(goal.initialAmount)}</div>
+      </div>`;
+  }
+
+  if (history.length === 0 && !goal.initialAmount) {
+    el.innerHTML = `<div style="font-size:12px; color:var(--ink-faint); padding:8px 0;">لا توجد عمليات بعد. استخدم Add أو Withdraw.</div>`;
+    return;
+  }
+
+  rows += history.map(h => {
+    let icon, label, amtHtml, color;
+    if (h.type === 'add') {
+      icon = h.auto ? '🔄' : '➕';
+      label = h.auto ? 'إضافة شهرية تلقائية' : 'إضافة';
+      color = 'var(--success)';
+      amtHtml = `+${fmtAmountMono(h.amount)}`;
+    } else if (h.type === 'withdraw') {
+      icon = '➖';
+      label = 'سحب';
+      color = 'var(--danger)';
+      amtHtml = `−${fmtAmountMono(h.amount)}`;
+    } else if (h.type === 'reset') {
+      icon = '🔁';
+      label = 'تصفير';
+      color = 'var(--ink-muted)';
+      amtHtml = '→ 0';
+    }
+    const dateStr = h.date ? new Date(h.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+    return `
+      <div style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--divider);">
+        <div style="width:26px; height:26px; border-radius:6px; background:var(--bg-subtle); display:grid; place-items:center; font-size:13px; flex-shrink:0;">${icon}</div>
+        <div style="flex:1; min-width:0;">
+          <div style="font-size:13px; font-weight:500;">${label}</div>
+          <div style="font-size:11px; color:var(--ink-muted);">${dateStr}${h.note ? ' · ' + escapeHtml(h.note) : ''}</div>
+        </div>
+        <div class="amount-mono" style="font-size:13px; color:${color};">${amtHtml}</div>
+      </div>`;
+  }).join('');
+
+  el.innerHTML = rows;
 }
 
 let _goalColor = GOAL_PALETTE[0];
