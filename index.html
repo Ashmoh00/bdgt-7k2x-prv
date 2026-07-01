@@ -1186,7 +1186,10 @@
     <button class="nav-arrow" id="prevMonth" aria-label="Previous month">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
     </button>
-    <div class="month-display" id="monthDisplay"></div>
+    <div style="display: flex; flex-direction: column; align-items: center; min-width: 0;">
+      <div class="month-display" id="monthDisplay"></div>
+      <div id="cycleRange" style="font-size: 10px; color: var(--ink-faint); letter-spacing: 0.04em; margin-top: -2px; white-space: nowrap;"></div>
+    </div>
     <button class="nav-arrow" id="nextMonth" aria-label="Next month">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
     </button>
@@ -1211,6 +1214,7 @@
   <button class="tab active" data-view="overview" role="tab">Overview</button>
   <button class="tab" data-view="log" role="tab">Log<span class="tab-count" id="logCount"></span></button>
   <button class="tab" data-view="plan" role="tab">Plan</button>
+  <button class="tab" data-view="savings" role="tab">Savings</button>
   <button class="tab" data-view="insights" role="tab">Insights</button>
   <button class="tab" data-view="trends" role="tab">Trends</button>
 </nav>
@@ -1326,6 +1330,29 @@
     <div id="logList"></div>
   </section>
 
+  <!-- =========== SAVINGS =========== -->
+  <section class="view" id="view-savings">
+    <div class="panel" style="margin-bottom: 24px;">
+      <div class="section-head">
+        <h2 class="section-title">Total saved</h2>
+        <div class="section-meta">across all funds</div>
+      </div>
+      <div style="display:flex; align-items:flex-end; gap:24px; flex-wrap:wrap;">
+        <div style="flex:1; min-width:200px;">
+          <div class="amount" style="font-size:48px; line-height:1;" id="savingsTotalDisplay">—</div>
+          <div id="savingsTotalSub" style="font-size:12px; color:var(--ink-muted); margin-top:6px;"></div>
+        </div>
+        <button class="btn btn-primary" id="addGoalBtn">+ New fund</button>
+      </div>
+    </div>
+
+    <div class="section-head">
+      <h2 class="section-title">Your funds</h2>
+      <div class="section-meta">tap to add or withdraw</div>
+    </div>
+    <div id="goalsList" style="display:flex; flex-direction:column; gap:14px; margin-bottom:32px;"></div>
+  </section>
+
   <!-- =========== PLAN =========== -->
   <section class="view" id="view-plan">
     <div class="panel" style="margin-bottom: 24px;">
@@ -1340,6 +1367,18 @@
         </div>
         <button class="btn btn-secondary" id="planSetBudget">Set monthly budget</button>
       </div>
+    </div>
+
+    <!-- One-time upcoming commitments -->
+    <div class="panel" style="margin-bottom: 24px;">
+      <div class="section-head">
+        <h2 class="section-title">One-time upcoming</h2>
+        <button class="btn btn-secondary" id="addOneTimeBtn" style="font-size:12px; padding:6px 12px;">+ Add item</button>
+      </div>
+      <div style="font-size:12px; color:var(--ink-muted); margin-bottom:14px; line-height:1.6;">
+        Expenses that happen once (a gift, a water filter). Add them here and they'll appear as a reminder in the cycle you choose — without repeating.
+      </div>
+      <div id="oneTimeList" style="display:flex; flex-direction:column; gap:8px;"></div>
     </div>
 
     <div class="section-head">
@@ -1505,6 +1544,122 @@
   </div>
 </div>
 
+<!-- =========== GOAL EDITOR MODAL =========== -->
+<div class="modal-backdrop" id="goalEditModal" role="dialog" aria-modal="true">
+  <div class="modal" style="max-width: 440px;">
+    <div class="modal-head">
+      <h3 class="modal-title" id="goalEditTitle">New fund</h3>
+      <button class="modal-close" id="goalEditClose" aria-label="Close">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label class="field-label" for="goalName">Name</label>
+        <input id="goalName" class="field-input" type="text" placeholder="مثلاً: ادخار السيارة" maxlength="30" />
+      </div>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+        <div class="field">
+          <label class="field-label" for="goalEmoji">Emoji</label>
+          <input id="goalEmoji" class="field-input" type="text" placeholder="🚗" maxlength="4" style="font-size:18px; text-align:center;" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="goalInitial">Starting amount</label>
+          <input id="goalInitial" class="field-input" type="text" inputmode="decimal" placeholder="0" />
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--ink-faint); margin:-8px 0 14px; line-height:1.5;">
+        "Starting amount" = money you've already saved before (e.g. your existing emergency fund).
+      </div>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+        <div class="field">
+          <label class="field-label" for="goalMonthly">Monthly amount</label>
+          <input id="goalMonthly" class="field-input" type="text" inputmode="decimal" placeholder="500" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="goalTarget">Target <span style="color:var(--ink-faint);text-transform:none;letter-spacing:0;font-weight:400">(optional)</span></label>
+          <input id="goalTarget" class="field-input" type="text" inputmode="decimal" placeholder="0 = none" />
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--ink-faint); margin:-8px 0 14px; line-height:1.5;">
+        "Monthly amount" is added automatically each new cycle. "Target" shows a progress bar (e.g. the car's price).
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label class="field-label">Color</label>
+        <div id="goalColorGrid" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger" id="goalDelete" style="margin-right:auto; display:none;">Delete fund</button>
+      <button class="btn btn-ghost" id="goalCancel">Cancel</button>
+      <button class="btn btn-primary" id="goalSave">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- =========== GOAL TRANSACTION MODAL (add / withdraw / reset) =========== -->
+<div class="modal-backdrop" id="goalTxModal" role="dialog" aria-modal="true">
+  <div class="modal" style="max-width: 420px;">
+    <div class="modal-head">
+      <h3 class="modal-title" id="goalTxTitle">Add to fund</h3>
+      <button class="modal-close" id="goalTxClose" aria-label="Close">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="toggle-row" id="goalTxType" style="margin-bottom:18px;">
+        <button class="toggle-opt active" data-gtx="add" type="button">Add</button>
+        <button class="toggle-opt" data-gtx="withdraw" type="button">Withdraw</button>
+        <button class="toggle-opt" data-gtx="reset" type="button">Reset to 0</button>
+      </div>
+      <div id="goalTxAmountWrap" class="field">
+        <label class="field-label" for="goalTxAmount">Amount</label>
+        <input id="goalTxAmount" class="amount-input" type="text" inputmode="decimal" placeholder="0" />
+      </div>
+      <div id="goalTxResetNote" style="display:none; font-size:13px; color:var(--ink-muted); line-height:1.6; padding:12px; background:var(--warning-soft); border-radius:var(--radius);">
+        This empties the fund back to 0 (for when you've spent/paid it). The fund's history and all your past months stay intact — nothing is deleted.
+      </div>
+      <div class="field" style="margin-top:14px; margin-bottom:0;">
+        <label class="field-label" for="goalTxNote">Note <span style="color:var(--ink-faint);text-transform:none;letter-spacing:0;font-weight:400">(optional)</span></label>
+        <input id="goalTxNote" class="field-input" type="text" placeholder="e.g. paid the rent" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="goalTxCancel">Cancel</button>
+      <button class="btn btn-primary" id="goalTxSave">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- =========== ONE-TIME ITEM MODAL =========== -->
+<div class="modal-backdrop" id="oneTimeModal" role="dialog" aria-modal="true">
+  <div class="modal" style="max-width: 420px;">
+    <div class="modal-head">
+      <h3 class="modal-title" id="oneTimeTitle">One-time item</h3>
+      <button class="modal-close" id="oneTimeClose" aria-label="Close">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label class="field-label" for="oneTimeName">What is it?</label>
+        <input id="oneTimeName" class="field-input" type="text" placeholder="مثلاً: هدية، فلتر مويه" maxlength="40" />
+      </div>
+      <div class="field">
+        <label class="field-label" for="oneTimeAmount">Amount</label>
+        <input id="oneTimeAmount" class="amount-input" type="text" inputmode="decimal" placeholder="0" />
+      </div>
+      <div class="field">
+        <label class="field-label" for="oneTimeCycle">For which cycle?</label>
+        <select id="oneTimeCycle" class="field-select"></select>
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label class="field-label">Category</label>
+        <div class="cat-grid" id="oneTimeCatGrid"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger" id="oneTimeDelete" style="margin-right:auto; display:none;">Delete</button>
+      <button class="btn btn-ghost" id="oneTimeCancel">Cancel</button>
+      <button class="btn btn-primary" id="oneTimeSave">Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- =========== TX MODAL =========== -->
 <div class="modal-backdrop" id="txModal" role="dialog" aria-modal="true">
   <div class="modal">
@@ -1616,6 +1771,20 @@
             <option value="0">Sunday</option>
             <option value="1">Monday</option>
             <option value="6">Saturday</option>
+          </select>
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="sr-label">Cycle start day</div>
+            <div class="sr-desc">The month runs from this day (e.g. salary day)</div>
+          </div>
+          <select id="settingsCycleStart">
+            <option value="1">1st</option>
+            <option value="25">25th</option>
+            <option value="26">26th</option>
+            <option value="27">27th</option>
+            <option value="28">28th</option>
+            <option value="15">15th</option>
           </select>
         </div>
         <div class="settings-row">
@@ -1828,7 +1997,14 @@ const Store = {
 // STATE
 // ============================================================
 const state = {
-  data: { transactions: [], budgets: { ...DEFAULT_BUDGETS }, categories: DEFAULT_CATEGORIES.slice(), settings: { currency: 'SAR', monthlyBudget: DEFAULT_MONTHLY_BUDGET, weekStart: 0, theme: 'light' } },
+  data: {
+    transactions: [],
+    budgets: { ...DEFAULT_BUDGETS },
+    categories: DEFAULT_CATEGORIES.slice(),
+    savingsGoals: [],      // [{id, name, emoji, color, balance, target, monthlyContribution, initialAmount, history:[{date, amount, type, note}]}]
+    oneTimeItems: [],      // [{id, name, amount, category, note, forCycleKey, done}]
+    settings: { currency: 'SAR', monthlyBudget: DEFAULT_MONTHLY_BUDGET, weekStart: 0, theme: 'light', cycleStartDay: 25 }
+  },
   cursorMonth: new Date(),
   view: 'overview',
   logFilter: 'all',
@@ -1838,6 +2014,8 @@ const state = {
   newTxType: 'expense',
   newTxCategory: 'food',
   editingCategoryId: null, // null for new, 'id' for edit
+  editingGoalId: null,
+  goalTxTarget: null,      // which goal we're adding/withdrawing from
 };
 
 // ============================================================
@@ -2121,6 +2299,8 @@ async function doCloudPull(opts = {}) {
         transactions: remote.transactions || [],
         budgets: remote.budgets || {},
         categories: (remote.categories && remote.categories.length) ? remote.categories : DEFAULT_CATEGORIES.slice(),
+        savingsGoals: remote.savingsGoals || [],
+        oneTimeItems: remote.oneTimeItems || [],
         settings: { ...state.data.settings, ...(remote.settings || {}) }
       };
       await persistLocal();
@@ -2163,6 +2343,8 @@ async function loadData() {
         transactions: parsed.transactions || [],
         budgets: parsed.budgets || {},
         categories: (parsed.categories && parsed.categories.length) ? parsed.categories : DEFAULT_CATEGORIES.slice(),
+        savingsGoals: parsed.savingsGoals || [],
+        oneTimeItems: parsed.oneTimeItems || [],
         settings: { ...state.data.settings, ...(parsed.settings || {}) }
       };
     } catch (e) { console.warn('Failed to parse stored data', e); }
@@ -2209,6 +2391,86 @@ function fmtAmountMono(n) {
   })}`;
 }
 
+// ============================================================
+// BILLING CYCLE SYSTEM
+// ============================================================
+// A "cycle" runs from cycleStartDay of one month to the day before
+// cycleStartDay of the next. Default is 25 → salary arrives on the 25th,
+// so the spending month runs 25th → 24th.
+// A cycle is LABELED by the month it ENDS in (the month most of it falls in).
+// e.g. cycle starting May 25 → ends June 24 → labeled "June".
+
+function cycleStartDay() {
+  return state.data.settings.cycleStartDay || 25;
+}
+
+// Given any date, return the "cycle anchor" — a Date set to cycleStartDay
+// of the cycle that this date belongs to (i.e., the start of its cycle).
+function cycleAnchorFor(date) {
+  const d = new Date(date);
+  const startDay = cycleStartDay();
+  const anchor = new Date(d.getFullYear(), d.getMonth(), startDay);
+  if (d.getDate() < startDay) {
+    // Before the start day → belongs to the previous cycle
+    anchor.setMonth(anchor.getMonth() - 1);
+  }
+  return anchor;
+}
+
+// The label month for a cycle = the month AFTER its anchor
+// (since a cycle starting May 25 is the "June" cycle).
+// Returns a Date positioned in the label month.
+function cycleLabelMonth(anchorDate) {
+  const startDay = cycleStartDay();
+  if (startDay === 1) return new Date(anchorDate); // day-1 cycles label as their own month
+  const d = new Date(anchorDate);
+  d.setMonth(d.getMonth() + 1);
+  return d;
+}
+
+// Inverse: given a label month (what the user sees in the header),
+// return the cycle anchor (start date).
+function anchorFromLabelMonth(labelDate) {
+  const startDay = cycleStartDay();
+  if (startDay === 1) {
+    return new Date(labelDate.getFullYear(), labelDate.getMonth(), 1);
+  }
+  const d = new Date(labelDate.getFullYear(), labelDate.getMonth(), startDay);
+  d.setMonth(d.getMonth() - 1);
+  return d;
+}
+
+// Does date fall within the cycle labeled by state.cursorMonth?
+function inCursorCycle(date) {
+  const d = new Date(date);
+  const anchor = anchorFromLabelMonth(state.cursorMonth);
+  const nextAnchor = new Date(anchor);
+  nextAnchor.setMonth(nextAnchor.getMonth() + 1);
+  // Normalize to midnight for comparison
+  const dt = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  return dt >= anchor && dt < nextAnchor;
+}
+
+// A stable string key for the cycle a date belongs to (keyed by anchor)
+function cycleKeyFor(date) {
+  const anchor = cycleAnchorFor(date);
+  return `${anchor.getFullYear()}-${String(anchor.getMonth() + 1).padStart(2, '0')}`;
+}
+
+// Key for the currently-viewed cycle
+function currentCycleKey() {
+  const anchor = anchorFromLabelMonth(state.cursorMonth);
+  return `${anchor.getFullYear()}-${String(anchor.getMonth() + 1).padStart(2, '0')}`;
+}
+
+// The date range of the currently-viewed cycle: {start, end} (end exclusive)
+function cursorCycleRange() {
+  const start = anchorFromLabelMonth(state.cursorMonth);
+  const end = new Date(start);
+  end.setMonth(end.getMonth() + 1);
+  return { start, end };
+}
+
 function monthKey(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2,'0')}`; }
 function sameMonth(a, b) { return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth(); }
 function daysInMonth(d) { return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate(); }
@@ -2217,11 +2479,9 @@ function fmtDate(d, opts = {}) {
   return new Date(d).toLocaleDateString(undefined, fmt);
 }
 
+// Now cycle-aware: returns transactions in the currently-viewed CYCLE
 function txsInCursorMonth() {
-  return state.data.transactions.filter(t => {
-    const d = new Date(t.date);
-    return sameMonth(d, state.cursorMonth);
-  });
+  return state.data.transactions.filter(t => inCursorCycle(t.date));
 }
 
 function showToast(msg) {
@@ -2240,6 +2500,23 @@ function renderMonth() {
   const monthName = state.cursorMonth.toLocaleDateString(undefined, opts);
   const year = state.cursorMonth.getFullYear();
   $('#monthDisplay').innerHTML = `${monthName}<span class="year">${year}</span>`;
+
+  // Show the cycle date range as a subtitle (e.g., "25 May – 24 Jun")
+  const rangeEl = document.getElementById('cycleRange');
+  if (rangeEl) {
+    const startDay = cycleStartDay();
+    if (startDay === 1) {
+      rangeEl.textContent = '';
+      rangeEl.style.display = 'none';
+    } else {
+      const { start, end } = cursorCycleRange();
+      const lastDay = new Date(end);
+      lastDay.setDate(lastDay.getDate() - 1);
+      const fmt = (d) => d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+      rangeEl.textContent = `${fmt(start)} – ${fmt(lastDay)}`;
+      rangeEl.style.display = '';
+    }
+  }
 }
 
 function setView(name) {
@@ -2265,13 +2542,22 @@ function renderOverview() {
   // Hero amounts
   $('#heroTotal').innerHTML = totalSpent === 0 ? `<span class="currency-symbol">${currencySym()}</span>0` : fmtAmount(totalSpent);
 
-  const isCurrentMonth = sameMonth(month, new Date());
+  // Cycle-aware daily average
+  const { start: cycleStart, end: cycleEnd } = cursorCycleRange();
+  const totalCycleDays = Math.round((cycleEnd - cycleStart) / 86400000);
   const today = new Date();
-  const daysElapsed = isCurrentMonth ? today.getDate() : daysInMonth(month);
+  const todayMid = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const isCurrentCycle = todayMid >= cycleStart && todayMid < cycleEnd;
+  let daysElapsed;
+  if (isCurrentCycle) {
+    daysElapsed = Math.round((todayMid - cycleStart) / 86400000) + 1;
+  } else {
+    daysElapsed = totalCycleDays;
+  }
   const dailyAvg = daysElapsed > 0 ? totalSpent / daysElapsed : 0;
 
   $('#metaDailyAvg').innerHTML = fmtAmount(dailyAvg);
-  $('#metaDailyAvgSub').textContent = isCurrentMonth
+  $('#metaDailyAvgSub').textContent = isCurrentCycle
     ? `over ${daysElapsed} day${daysElapsed === 1 ? '' : 's'} so far`
     : `over ${daysElapsed} day${daysElapsed === 1 ? '' : 's'}`;
 
@@ -2380,16 +2666,25 @@ function renderDonut(expenses) {
 }
 
 function renderCalendar(expenses, month) {
-  const dim = daysInMonth(month);
-  const firstDay = new Date(month.getFullYear(), month.getMonth(), 1).getDay();
+  const { start: cycleStart, end: cycleEnd } = cursorCycleRange();
   const weekStart = parseInt(state.data.settings.weekStart || 0, 10);
-  const offset = (firstDay - weekStart + 7) % 7;
 
+  // Build the list of dates in this cycle
+  const days = [];
+  let cur = new Date(cycleStart);
+  while (cur < cycleEnd) {
+    days.push(new Date(cur));
+    cur.setDate(cur.getDate() + 1);
+  }
+
+  // Sum expenses by date-string within the cycle
   const dailyTotals = {};
   for (const t of expenses) {
-    const day = new Date(t.date).getDate();
-    dailyTotals[day] = (dailyTotals[day] || 0) + t.amount;
+    const d = new Date(t.date);
+    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    dailyTotals[key] = (dailyTotals[key] || 0) + t.amount;
   }
+  const keyFor = (d) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 
   const max = Math.max(0, ...Object.values(dailyTotals));
   const intensityFor = (v) => {
@@ -2407,20 +2702,25 @@ function renderCalendar(expenses, month) {
   for (let i = 0; i < 7; i++) orderedLabels.push(dayLabels[(weekStart + i) % 7]);
 
   const today = new Date();
-  const isCurMonth = sameMonth(month, today);
+  const todayKey = keyFor(today);
+
+  // Leading offset based on the weekday of the first cycle day
+  const firstWeekday = days[0].getDay();
+  const offset = (firstWeekday - weekStart + 7) % 7;
 
   let html = orderedLabels.map(d => `<div class="cal-day-name">${d}</div>`).join('');
   for (let i = 0; i < offset; i++) html += `<div class="cal-cell empty"></div>`;
-  for (let d = 1; d <= dim; d++) {
-    const amt = dailyTotals[d] || 0;
+  for (const d of days) {
+    const key = keyFor(d);
+    const amt = dailyTotals[key] || 0;
     const intensity = intensityFor(amt);
-    const isToday = isCurMonth && d === today.getDate();
+    const isToday = key === todayKey;
     const hasSpend = amt > 0;
+    const dayNum = d.getDate();
     html += `
       <div class="cal-cell ${isToday ? 'today' : ''} ${hasSpend ? 'has-spend' : ''}"
-           ${intensity ? `data-intensity="${intensity}"` : ''}
-           data-day="${d}">
-        <span class="cal-num">${d}</span>
+           ${intensity ? `data-intensity="${intensity}"` : ''}>
+        <span class="cal-num">${dayNum}</span>
         ${hasSpend ? `<div class="cal-tooltip">${fmtAmountMono(amt)}</div>` : ''}
       </div>
     `;
@@ -2567,6 +2867,9 @@ function renderPlan() {
 
   $('#planMonthlyDisplay').innerHTML = fmtAmount(totalSpent);
 
+  // One-time upcoming items (show pending ones, current cycle first)
+  renderOneTimeList();
+
   // Per-category budgets
   const spentByCat = {};
   for (const t of expenses) spentByCat[t.category] = (spentByCat[t.category] || 0) + t.amount;
@@ -2616,9 +2919,15 @@ function renderInsights() {
   const expenses = monthTxs.filter(t => t.type === 'expense');
   const totalSpent = expenses.reduce((s,t) => s + t.amount, 0);
 
-  // Compare to previous month
-  const prev = new Date(month.getFullYear(), month.getMonth() - 1, 1);
-  const prevTxs = state.data.transactions.filter(t => sameMonth(new Date(t.date), prev) && t.type === 'expense');
+  // Compare to previous cycle
+  const prevLabel = new Date(month.getFullYear(), month.getMonth() - 1, 1);
+  const prevAnchor = anchorFromLabelMonth(prevLabel);
+  const prevNext = new Date(prevAnchor); prevNext.setMonth(prevNext.getMonth() + 1);
+  const inRange = (d, start, end) => {
+    const dt = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    return dt >= start && dt < end;
+  };
+  const prevTxs = state.data.transactions.filter(t => t.type === 'expense' && inRange(new Date(t.date), prevAnchor, prevNext));
   const prevTotal = prevTxs.reduce((s,t) => s + t.amount, 0);
   const change = prevTotal > 0 ? ((totalSpent - prevTotal) / prevTotal) * 100 : null;
 
@@ -2631,13 +2940,15 @@ function renderInsights() {
   // Biggest single
   const biggest = expenses.slice().sort((a,b) => b.amount - a.amount)[0];
 
-  // Projection
-  const isCurMonth = sameMonth(month, new Date());
-  const dim = daysInMonth(month);
+  // Projection (cycle-aware)
+  const { start: cycleStart, end: cycleEnd } = cursorCycleRange();
+  const totalCycleDays = Math.round((cycleEnd - cycleStart) / 86400000);
   const today = new Date();
-  const daysElapsed = isCurMonth ? today.getDate() : dim;
+  const todayMid = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const isCurCycle = todayMid >= cycleStart && todayMid < cycleEnd;
+  const daysElapsed = isCurCycle ? Math.round((todayMid - cycleStart) / 86400000) + 1 : totalCycleDays;
   const dailyAvg = daysElapsed > 0 ? totalSpent / daysElapsed : 0;
-  const projected = isCurMonth ? dailyAvg * dim : totalSpent;
+  const projected = isCurCycle ? dailyAvg * totalCycleDays : totalSpent;
 
   // Most active day-of-week
   const dowTotals = [0,0,0,0,0,0,0];
@@ -2665,15 +2976,15 @@ function renderInsights() {
       isHTML: true
     },
     {
-      label: isCurMonth ? 'Projected month end' : 'Month total',
+      label: isCurCycle ? 'Projected cycle end' : 'Cycle total',
       value: fmtAmount(projected),
-      sub: isCurMonth ? `at current pace of ${fmtAmountMono(dailyAvg)}/day` : 'final',
+      sub: isCurCycle ? `at current pace of ${fmtAmountMono(dailyAvg)}/day` : 'final',
       isHTML: true
     },
     {
-      label: 'vs last month',
+      label: 'vs last cycle',
       value: change === null ? '—' : `${change >= 0 ? '+' : ''}${change.toFixed(0)}%`,
-      sub: prevTotal > 0 ? `${fmtAmountMono(prevTotal)} last month` : 'no prior data',
+      sub: prevTotal > 0 ? `${fmtAmountMono(prevTotal)} last cycle` : 'no prior data',
       trend: change !== null ? (change > 0 ? 'up' : 'down') : null
     },
     {
@@ -2701,12 +3012,26 @@ function renderInsights() {
 }
 
 function renderDailyChart(expenses, month) {
-  const dim = daysInMonth(month);
-  const totals = new Array(dim).fill(0);
-  for (const t of expenses) {
-    const d = new Date(t.date).getDate();
-    totals[d - 1] += t.amount;
+  // Build the list of dates in the current cycle
+  const { start: cycleStart, end: cycleEnd } = cursorCycleRange();
+  const days = [];
+  let cur = new Date(cycleStart);
+  while (cur < cycleEnd) {
+    days.push(new Date(cur));
+    cur.setDate(cur.getDate() + 1);
   }
+  const dim = days.length;
+
+  // Sum by date-key
+  const keyFor = (d) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+  const totalsByKey = {};
+  for (const t of expenses) {
+    const d = new Date(t.date);
+    const k = keyFor(d);
+    totalsByKey[k] = (totalsByKey[k] || 0) + t.amount;
+  }
+  const totals = days.map(d => totalsByKey[keyFor(d)] || 0);
+
   const max = Math.max(...totals, 1);
   const svg = $('#dailyChart');
   const w = 600, h = 220, pad = 24, padBottom = 30, padTop = 12;
@@ -2714,7 +3039,7 @@ function renderDailyChart(expenses, month) {
   const innerH = h - padTop - padBottom;
   const barW = innerW / dim - 2;
   const today = new Date();
-  const isCurMonth = sameMonth(month, today);
+  const todayKey = keyFor(today);
 
   let html = '';
   // Grid lines
@@ -2724,38 +3049,51 @@ function renderDailyChart(expenses, month) {
     html += `<text class="daily-axis-label" x="${pad - 4}" y="${y + 3}" text-anchor="end">${Math.round(max * i / 4)}</text>`;
   }
 
-  for (let d = 0; d < dim; d++) {
-    const x = pad + d * (innerW / dim) + 1;
-    const bh = totals[d] > 0 ? Math.max(2, (totals[d] / max) * innerH) : 0;
+  for (let i = 0; i < dim; i++) {
+    const d = days[i];
+    const x = pad + i * (innerW / dim) + 1;
+    const bh = totals[i] > 0 ? Math.max(2, (totals[i] / max) * innerH) : 0;
     const y = padTop + innerH - bh;
-    const isToday = isCurMonth && (d + 1) === today.getDate();
+    const isToday = keyFor(d) === todayKey;
+    const dayNum = d.getDate();
     html += `<rect class="daily-bar ${isToday ? 'today' : ''}" x="${x}" y="${y}" width="${barW}" height="${bh}" rx="1">
-      <title>Day ${d+1}: ${fmtAmountMono(totals[d])}</title>
+      <title>${d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}: ${fmtAmountMono(totals[i])}</title>
     </rect>`;
-    if ((d + 1) % 5 === 0 || d === 0 || d === dim - 1) {
-      html += `<text class="daily-axis-label" x="${x + barW/2}" y="${h - 10}" text-anchor="middle">${d+1}</text>`;
+    // Label every ~5th day, plus first and last
+    if (i % 5 === 0 || i === dim - 1) {
+      html += `<text class="daily-axis-label" x="${x + barW/2}" y="${h - 10}" text-anchor="middle">${dayNum}</text>`;
     }
   }
   svg.innerHTML = html;
 
-  const peakDay = totals.indexOf(Math.max(...totals)) + 1;
-  $('#dailyChartMeta').textContent = totals.some(v => v > 0) ? `peak on day ${peakDay}` : 'no data';
+  const peakIdx = totals.indexOf(Math.max(...totals));
+  const peakDate = days[peakIdx];
+  $('#dailyChartMeta').textContent = totals.some(v => v > 0)
+    ? `peak on ${peakDate.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`
+    : 'no data';
 }
 
 // ============================================================
 // RENDER: TRENDS
 // ============================================================
 function renderTrends() {
-  // Determine range: cursor month + 11 months back (12 months total)
+  // Determine range: cursor cycle + 11 cycles back (12 cycles total)
   const months = [];
   const end = new Date(state.cursorMonth.getFullYear(), state.cursorMonth.getMonth(), 1);
   for (let i = 11; i >= 0; i--) {
     months.push(new Date(end.getFullYear(), end.getMonth() - i, 1));
   }
 
-  // Aggregate by month
+  const inRange = (d, start, endEx) => {
+    const dt = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    return dt >= start && dt < endEx;
+  };
+
+  // Aggregate by CYCLE (not calendar month)
   const monthData = months.map(m => {
-    const txs = state.data.transactions.filter(t => sameMonth(new Date(t.date), m));
+    const anchor = anchorFromLabelMonth(m);
+    const nextAnchor = new Date(anchor); nextAnchor.setMonth(nextAnchor.getMonth() + 1);
+    const txs = state.data.transactions.filter(t => inRange(new Date(t.date), anchor, nextAnchor));
     const expenses = txs.filter(t => t.type === 'expense');
     const income = txs.filter(t => t.type === 'income');
     const byCategory = {};
@@ -2941,12 +3279,12 @@ function openTxModal(editId = null) {
     $('#txAmount').value = '';
     $('#txDesc').value = '';
     const d = new Date();
-    // If browsing a different month, default to first of that month
-    if (!sameMonth(state.cursorMonth, d)) {
-      const target = new Date(state.cursorMonth.getFullYear(), state.cursorMonth.getMonth(), 1);
-      $('#txDate').value = target.toISOString().slice(0,10);
-    } else {
+    // If today falls in the cycle being viewed, use today; otherwise use the cycle's start day
+    if (inCursorCycle(d)) {
       $('#txDate').value = d.toISOString().slice(0,10);
+    } else {
+      const { start } = cursorCycleRange();
+      $('#txDate').value = start.toISOString().slice(0,10);
     }
     $('#txNote').value = '';
     $('#txDelete').style.display = 'none';
@@ -3096,6 +3434,7 @@ async function saveBudget() {
 function openSettings() {
   $('#settingsCurrency').value = state.data.settings.currency;
   $('#settingsWeekStart').value = state.data.settings.weekStart;
+  $('#settingsCycleStart').value = state.data.settings.cycleStartDay || 25;
   updatePwStatus();
 
   // Storage status — detailed explanation of where data lives
@@ -3166,6 +3505,11 @@ async function setWeekStart(v) {
   await saveData();
   render();
 }
+async function setCycleStart(v) {
+  state.data.settings.cycleStartDay = parseInt(v, 10);
+  await saveData();
+  render();
+}
 
 function exportData() {
   const blob = new Blob([JSON.stringify(state.data, null, 2)], { type: 'application/json' });
@@ -3188,6 +3532,8 @@ async function importData(file) {
       transactions: parsed.transactions,
       budgets: parsed.budgets || {},
       categories: (parsed.categories && parsed.categories.length) ? parsed.categories : DEFAULT_CATEGORIES.slice(),
+      savingsGoals: parsed.savingsGoals || [],
+      oneTimeItems: parsed.oneTimeItems || [],
       settings: { ...state.data.settings, ...(parsed.settings || {}) }
     };
     await saveData();
@@ -3233,11 +3579,412 @@ function render() {
   if (state.view === 'overview') renderOverview();
   else if (state.view === 'log') renderLog();
   else if (state.view === 'plan') renderPlan();
+  else if (state.view === 'savings') renderSavings();
   else if (state.view === 'insights') renderInsights();
   else if (state.view === 'trends') renderTrends();
 
   // Always update tab counter
   $('#logCount').textContent = txsInCursorMonth().length > 0 ? txsInCursorMonth().length : '';
+}
+
+// ============================================================
+// SAVINGS GOALS (funds)
+// ============================================================
+const GOAL_PALETTE = ['#A05A5A','#5A7A8E','#7C7259','#C97B49','#B86F8F','#7A9966','#5C9CBF','#8B6BA8','#3A7A4A','#C09A5C','#B45309','#A88FB0'];
+
+function goalBalance(goal) {
+  // Balance is derived from initialAmount + sum of history entries
+  let bal = goal.initialAmount || 0;
+  for (const h of (goal.history || [])) {
+    if (h.type === 'add') bal += h.amount;
+    else if (h.type === 'withdraw') bal -= h.amount;
+    else if (h.type === 'reset') bal = 0;
+  }
+  return bal;
+}
+
+function totalSaved() {
+  return (state.data.savingsGoals || []).reduce((s, g) => s + goalBalance(g), 0);
+}
+
+// Auto-add monthly contributions for the current cycle if not already added
+async function applyAutoContributions() {
+  const key = currentCycleKey();
+  let changed = false;
+  for (const goal of (state.data.savingsGoals || [])) {
+    if (!goal.monthlyContribution || goal.monthlyContribution <= 0) continue;
+    goal.history = goal.history || [];
+    // Has an auto-contribution already been made for this cycle?
+    const already = goal.history.some(h => h.type === 'add' && h.auto && h.cycleKey === key);
+    if (!already) {
+      // Only auto-add for the CURRENT real cycle (not past/future browsing)
+      const nowKey = cycleKeyFor(new Date());
+      if (key === nowKey) {
+        goal.history.push({
+          date: new Date().toISOString().slice(0,10),
+          amount: goal.monthlyContribution,
+          type: 'add',
+          auto: true,
+          cycleKey: key,
+          note: 'Monthly contribution'
+        });
+        changed = true;
+      }
+    }
+  }
+  if (changed) await saveData();
+}
+
+function renderSavings() {
+  const goals = state.data.savingsGoals || [];
+  const total = totalSaved();
+  $('#savingsTotalDisplay').innerHTML = total === 0 ? `<span class="currency-symbol">${currencySym()}</span>0` : fmtAmount(total);
+  $('#savingsTotalSub').textContent = `${goals.length} fund${goals.length === 1 ? '' : 's'}`;
+
+  const list = $('#goalsList');
+  if (goals.length === 0) {
+    list.innerHTML = `
+      <div class="empty" style="padding:40px 20px;">
+        <div class="empty-title">No savings funds yet</div>
+        <div class="empty-msg">Create a fund for things you're saving toward — rent, emergencies, a car, a trip. Tap "+ New fund" above.</div>
+      </div>`;
+    return;
+  }
+
+  list.innerHTML = goals.map(goal => {
+    const bal = goalBalance(goal);
+    const target = goal.target || 0;
+    const pct = target > 0 ? Math.min(100, (bal / target) * 100) : 0;
+    const monthly = goal.monthlyContribution || 0;
+    let progressHtml = '';
+    if (target > 0) {
+      progressHtml = `
+        <div class="bud-bar" style="margin:10px 0 6px;"><div class="bud-bar-fill" style="width:${pct}%; background:${goal.color};"></div></div>
+        <div style="font-size:11px; color:var(--ink-muted); font-family:var(--mono);">${fmtAmountMono(bal)} / ${fmtAmountMono(target)} · ${pct.toFixed(0)}%</div>`;
+    } else {
+      progressHtml = `<div style="font-size:11px; color:var(--ink-muted); margin-top:6px;">${monthly > 0 ? `+${fmtAmountMono(monthly)} each cycle` : 'no monthly amount set'}</div>`;
+    }
+    return `
+      <div class="panel" style="padding:20px;" data-goal-id="${goal.id}">
+        <div style="display:flex; align-items:flex-start; gap:14px;">
+          <div style="width:44px; height:44px; border-radius:11px; background:${goal.color}22; color:${goal.color}; display:grid; place-items:center; font-size:22px; flex-shrink:0;">${goal.emoji}</div>
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; justify-content:space-between; align-items:baseline; gap:8px;">
+              <div style="font-weight:600; font-size:15px;">${escapeHtml(goal.name)}</div>
+              <button class="goal-edit-btn" data-goal="${goal.id}" style="color:var(--ink-faint); font-size:11px; padding:2px 6px; border-radius:4px;">edit</button>
+            </div>
+            <div class="amount" style="font-size:28px; line-height:1.1; margin-top:4px;">${fmtAmount(bal)}</div>
+            ${progressHtml}
+          </div>
+        </div>
+        <div style="display:flex; gap:8px; margin-top:16px;">
+          <button class="btn btn-secondary goal-action" data-goal="${goal.id}" data-action="add" style="flex:1; font-size:12px; padding:8px;">+ Add</button>
+          <button class="btn btn-secondary goal-action" data-goal="${goal.id}" data-action="withdraw" style="flex:1; font-size:12px; padding:8px;">− Withdraw</button>
+          <button class="btn btn-ghost goal-action" data-goal="${goal.id}" data-action="reset" style="flex:1; font-size:12px; padding:8px;">Reset</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Wire actions
+  list.querySelectorAll('.goal-edit-btn').forEach(b => b.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openGoalEditor(b.dataset.goal);
+  }));
+  list.querySelectorAll('.goal-action').forEach(b => b.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openGoalTx(b.dataset.goal, b.dataset.action);
+  }));
+}
+
+let _goalColor = GOAL_PALETTE[0];
+
+function openGoalEditor(goalId = null) {
+  state.editingGoalId = goalId;
+  if (goalId) {
+    const g = state.data.savingsGoals.find(x => x.id === goalId);
+    if (!g) return;
+    $('#goalEditTitle').textContent = 'Edit fund';
+    $('#goalName').value = g.name;
+    $('#goalEmoji').value = g.emoji;
+    $('#goalInitial').value = g.initialAmount || '';
+    $('#goalMonthly').value = g.monthlyContribution || '';
+    $('#goalTarget').value = g.target || '';
+    _goalColor = g.color;
+    $('#goalDelete').style.display = 'inline-block';
+    // Initial amount can't be edited once there's history (would corrupt balance) — allow but warn via note
+  } else {
+    $('#goalEditTitle').textContent = 'New fund';
+    $('#goalName').value = '';
+    $('#goalEmoji').value = '🎯';
+    $('#goalInitial').value = '';
+    $('#goalMonthly').value = '';
+    $('#goalTarget').value = '';
+    _goalColor = GOAL_PALETTE[Math.floor(Math.random() * GOAL_PALETTE.length)];
+    $('#goalDelete').style.display = 'none';
+  }
+  renderGoalColorGrid();
+  $('#goalEditModal').classList.add('open');
+  setTimeout(() => $('#goalName').focus(), 50);
+}
+
+function renderGoalColorGrid() {
+  $('#goalColorGrid').innerHTML = GOAL_PALETTE.map(c => `
+    <button type="button" data-color="${c}" style="width:28px; height:28px; border-radius:50%; background:${c}; border:2px solid ${c === _goalColor ? 'var(--ink)' : 'transparent'}; cursor:pointer;"></button>
+  `).join('');
+  $$('#goalColorGrid button').forEach(b => b.addEventListener('click', () => {
+    _goalColor = b.dataset.color;
+    renderGoalColorGrid();
+  }));
+}
+
+async function saveGoal() {
+  const name = $('#goalName').value.trim();
+  if (!name) { showToast('Give the fund a name'); return; }
+  const emoji = $('#goalEmoji').value.trim() || '🎯';
+  const initial = parseFloat($('#goalInitial').value) || 0;
+  const monthly = parseFloat($('#goalMonthly').value) || 0;
+  const target = parseFloat($('#goalTarget').value) || 0;
+
+  if (state.editingGoalId) {
+    const g = state.data.savingsGoals.find(x => x.id === state.editingGoalId);
+    if (g) {
+      g.name = name; g.emoji = emoji; g.color = _goalColor;
+      g.initialAmount = initial; g.monthlyContribution = monthly; g.target = target;
+    }
+    showToast('Fund updated');
+  } else {
+    state.data.savingsGoals.push({
+      id: 'goal_' + Date.now().toString(36) + Math.random().toString(36).slice(2,5),
+      name, emoji, color: _goalColor,
+      initialAmount: initial,
+      monthlyContribution: monthly,
+      target: target,
+      history: []
+    });
+    showToast('Fund created');
+  }
+  await saveData();
+  $('#goalEditModal').classList.remove('open');
+  renderSavings();
+}
+
+async function deleteGoal() {
+  if (!state.editingGoalId) return;
+  const g = state.data.savingsGoals.find(x => x.id === state.editingGoalId);
+  if (!g) return;
+  if (!confirm(`Delete the "${g.name}" fund? Its balance and history will be removed. Your monthly expense records are not affected.`)) return;
+  state.data.savingsGoals = state.data.savingsGoals.filter(x => x.id !== state.editingGoalId);
+  await saveData();
+  $('#goalEditModal').classList.remove('open');
+  renderSavings();
+  showToast('Fund deleted');
+}
+
+let _goalTxMode = 'add';
+
+function openGoalTx(goalId, mode = 'add') {
+  state.goalTxTarget = goalId;
+  _goalTxMode = mode;
+  const g = state.data.savingsGoals.find(x => x.id === goalId);
+  if (!g) return;
+  $('#goalTxTitle').textContent = `${g.emoji} ${g.name}`;
+  $('#goalTxAmount').value = '';
+  $('#goalTxNote').value = '';
+  $$('#goalTxType .toggle-opt').forEach(b => b.classList.toggle('active', b.dataset.gtx === mode));
+  updateGoalTxMode();
+  $('#goalTxModal').classList.add('open');
+  if (mode !== 'reset') setTimeout(() => $('#goalTxAmount').focus(), 50);
+}
+
+function updateGoalTxMode() {
+  const isReset = _goalTxMode === 'reset';
+  $('#goalTxAmountWrap').style.display = isReset ? 'none' : '';
+  $('#goalTxResetNote').style.display = isReset ? 'block' : 'none';
+  $('#goalTxSave').textContent = isReset ? 'Reset to 0' : (_goalTxMode === 'add' ? 'Add' : 'Withdraw');
+}
+
+async function saveGoalTx() {
+  const g = state.data.savingsGoals.find(x => x.id === state.goalTxTarget);
+  if (!g) return;
+  g.history = g.history || [];
+  const note = $('#goalTxNote').value.trim();
+
+  if (_goalTxMode === 'reset') {
+    g.history.push({ date: new Date().toISOString().slice(0,10), amount: 0, type: 'reset', note: note || 'Reset' });
+    showToast('Fund reset to 0');
+  } else {
+    const amount = parseFloat($('#goalTxAmount').value);
+    if (isNaN(amount) || amount <= 0) { showToast('Enter a valid amount'); return; }
+    if (_goalTxMode === 'withdraw' && amount > goalBalance(g)) {
+      if (!confirm('Withdraw more than the balance? The fund will go negative.')) return;
+    }
+    g.history.push({ date: new Date().toISOString().slice(0,10), amount, type: _goalTxMode, note });
+    showToast(_goalTxMode === 'add' ? 'Added to fund' : 'Withdrawn');
+  }
+  await saveData();
+  $('#goalTxModal').classList.remove('open');
+  renderSavings();
+}
+
+// ============================================================
+// ONE-TIME UPCOMING ITEMS
+// ============================================================
+function cycleOptions() {
+  // Generate a few cycle labels: current + next 3
+  const opts = [];
+  const now = new Date();
+  for (let i = 0; i < 4; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    // Label month for the cycle whose label is this month
+    const anchor = anchorFromLabelMonth(d);
+    const key = `${anchor.getFullYear()}-${String(anchor.getMonth()+1).padStart(2,'0')}`;
+    const label = d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+    opts.push({ key, label });
+  }
+  return opts;
+}
+
+let _editingOneTimeId = null;
+
+function openOneTimeModal(itemId = null) {
+  _editingOneTimeId = itemId;
+  // Populate cycle dropdown
+  const opts = cycleOptions();
+  $('#oneTimeCycle').innerHTML = opts.map(o => `<option value="${o.key}">${o.label}</option>`).join('');
+  // Populate category grid
+  renderOneTimeCatGrid();
+
+  if (itemId) {
+    const it = state.data.oneTimeItems.find(x => x.id === itemId);
+    if (!it) return;
+    $('#oneTimeTitle').textContent = 'Edit item';
+    $('#oneTimeName').value = it.name;
+    $('#oneTimeAmount').value = it.amount;
+    $('#oneTimeCycle').value = it.forCycleKey;
+    _oneTimeCat = it.category;
+    $('#oneTimeDelete').style.display = 'inline-block';
+  } else {
+    $('#oneTimeTitle').textContent = 'One-time item';
+    $('#oneTimeName').value = '';
+    $('#oneTimeAmount').value = '';
+    // Default to next cycle
+    if (opts[1]) $('#oneTimeCycle').value = opts[1].key;
+    _oneTimeCat = getExpenseCategories()[0]?.id || 'other';
+    $('#oneTimeDelete').style.display = 'none';
+  }
+  renderOneTimeCatGrid();
+  $('#oneTimeModal').classList.add('open');
+  setTimeout(() => $('#oneTimeName').focus(), 50);
+}
+
+let _oneTimeCat = 'other';
+function renderOneTimeCatGrid() {
+  const cats = getExpenseCategories();
+  $('#oneTimeCatGrid').innerHTML = cats.map(c => `
+    <button class="cat-opt ${c.id === _oneTimeCat ? 'selected' : ''}" data-cat="${c.id}" type="button">
+      <span class="cat-opt-emoji">${c.emoji}</span>
+      <span>${escapeHtml(c.name)}</span>
+    </button>`).join('');
+  $$('#oneTimeCatGrid .cat-opt').forEach(b => b.addEventListener('click', () => {
+    _oneTimeCat = b.dataset.cat;
+    renderOneTimeCatGrid();
+  }));
+}
+
+async function saveOneTime() {
+  const name = $('#oneTimeName').value.trim();
+  if (!name) { showToast('Enter what it is'); return; }
+  const amount = parseFloat($('#oneTimeAmount').value);
+  if (isNaN(amount) || amount <= 0) { showToast('Enter a valid amount'); return; }
+  const cycleKey = $('#oneTimeCycle').value;
+
+  if (_editingOneTimeId) {
+    const it = state.data.oneTimeItems.find(x => x.id === _editingOneTimeId);
+    if (it) { it.name = name; it.amount = amount; it.forCycleKey = cycleKey; it.category = _oneTimeCat; }
+    showToast('Item updated');
+  } else {
+    state.data.oneTimeItems.push({
+      id: 'ot_' + Date.now().toString(36) + Math.random().toString(36).slice(2,5),
+      name, amount, category: _oneTimeCat, forCycleKey: cycleKey, done: false
+    });
+    showToast('Item added');
+  }
+  await saveData();
+  $('#oneTimeModal').classList.remove('open');
+  renderPlan();
+}
+
+async function deleteOneTime() {
+  if (!_editingOneTimeId) return;
+  state.data.oneTimeItems = state.data.oneTimeItems.filter(x => x.id !== _editingOneTimeId);
+  await saveData();
+  $('#oneTimeModal').classList.remove('open');
+  renderPlan();
+  showToast('Item removed');
+}
+
+// Convert a one-time item into an actual transaction ("mark as paid / add")
+async function addOneTimeAsTransaction(itemId) {
+  const it = state.data.oneTimeItems.find(x => x.id === itemId);
+  if (!it) return;
+  // Add a transaction dated in the target cycle (use its anchor + a few days, or today if current)
+  const anchor = (() => {
+    const [y, m] = it.forCycleKey.split('-').map(Number);
+    return new Date(y, m - 1, cycleStartDay());
+  })();
+  const today = new Date();
+  const txDate = cycleKeyFor(today) === it.forCycleKey ? today.toISOString().slice(0,10) : anchor.toISOString().slice(0,10);
+  state.data.transactions.push({
+    id: uid(),
+    amount: it.amount,
+    description: it.name,
+    date: txDate,
+    note: 'One-time',
+    category: it.category,
+    type: 'expense',
+    createdAt: Date.now()
+  });
+  // Mark done + remove from pending
+  state.data.oneTimeItems = state.data.oneTimeItems.filter(x => x.id !== itemId);
+  await saveData();
+  renderPlan();
+  render();
+  showToast('Added as an expense');
+}
+
+function cycleLabelFromKey(key) {
+  const [y, m] = key.split('-').map(Number);
+  const anchor = new Date(y, m - 1, 1);
+  const label = cycleLabelMonth(anchor);
+  return label.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+}
+
+function renderOneTimeList() {
+  const items = (state.data.oneTimeItems || []).slice().sort((a, b) => a.forCycleKey.localeCompare(b.forCycleKey));
+  const list = $('#oneTimeList');
+  if (!list) return;
+  if (items.length === 0) {
+    list.innerHTML = `<div style="font-size:13px; color:var(--ink-faint); padding:8px 0;">No upcoming one-time items. Tap "Add item" to plan one.</div>`;
+    return;
+  }
+  list.innerHTML = items.map(it => {
+    const cat = getCat(it.category);
+    return `
+      <div style="display:flex; align-items:center; gap:12px; padding:12px; background:var(--bg-subtle); border-radius:var(--radius);" data-ot="${it.id}">
+        <div style="width:34px; height:34px; border-radius:8px; background:${cat.color}22; color:${cat.color}; display:grid; place-items:center; font-size:16px; flex-shrink:0;">${cat.emoji}</div>
+        <div style="flex:1; min-width:0;">
+          <div style="font-weight:500; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(it.name)}</div>
+          <div style="font-size:11px; color:var(--ink-muted);">${cycleLabelFromKey(it.forCycleKey)}</div>
+        </div>
+        <div class="amount" style="font-size:17px;">${fmtAmount(it.amount)}</div>
+        <div style="display:flex; gap:4px;">
+          <button class="ot-add btn btn-primary" data-ot="${it.id}" style="font-size:11px; padding:5px 10px;" title="Add as expense">Add</button>
+          <button class="ot-edit tx-action" data-ot="${it.id}" aria-label="Edit"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></button>
+        </div>
+      </div>`;
+  }).join('');
+  list.querySelectorAll('.ot-add').forEach(b => b.addEventListener('click', (e) => { e.stopPropagation(); addOneTimeAsTransaction(b.dataset.ot); }));
+  list.querySelectorAll('.ot-edit').forEach(b => b.addEventListener('click', (e) => { e.stopPropagation(); openOneTimeModal(b.dataset.ot); }));
 }
 
 // ============================================================
@@ -3647,6 +4394,9 @@ async function onAuthSuccess(isNewUser) {
   showToast('Signed in as ' + Cloud.userEmail());
   // Pull cloud data (will adopt remote if it exists, else push our defaults)
   await doCloudPull({ verbose: false });
+  // Apply any pending monthly savings contributions for the current cycle
+  await applyAutoContributions();
+  if (state.view === 'savings') renderSavings();
 }
 
 async function signOut() {
@@ -3860,6 +4610,7 @@ function bindEvents() {
   $('#settingsModal').addEventListener('click', (e) => { if (e.target === $('#settingsModal')) $('#settingsModal').classList.remove('open'); });
   $('#settingsCurrency').addEventListener('change', e => setCurrency(e.target.value));
   $('#settingsWeekStart').addEventListener('change', e => setWeekStart(e.target.value));
+  $('#settingsCycleStart').addEventListener('change', e => setCycleStart(e.target.value));
   $('#exportData').addEventListener('click', exportData);
   $('#importData').addEventListener('change', e => { if (e.target.files[0]) importData(e.target.files[0]); });
   $('#clearData').addEventListener('click', clearAllData);
@@ -3897,6 +4648,31 @@ function bindEvents() {
   $('#categoriesModalClose').addEventListener('click', closeCategoriesModal);
   $('#categoriesModal').addEventListener('click', (e) => { if (e.target === $('#categoriesModal')) closeCategoriesModal(); });
   $('#addCategoryBtn').addEventListener('click', () => openCategoryEditor(null));
+
+  // Savings goals
+  $('#addGoalBtn').addEventListener('click', () => openGoalEditor(null));
+  $('#goalEditClose').addEventListener('click', () => $('#goalEditModal').classList.remove('open'));
+  $('#goalCancel').addEventListener('click', () => $('#goalEditModal').classList.remove('open'));
+  $('#goalSave').addEventListener('click', saveGoal);
+  $('#goalDelete').addEventListener('click', deleteGoal);
+  $('#goalEditModal').addEventListener('click', (e) => { if (e.target === $('#goalEditModal')) $('#goalEditModal').classList.remove('open'); });
+  $('#goalTxClose').addEventListener('click', () => $('#goalTxModal').classList.remove('open'));
+  $('#goalTxCancel').addEventListener('click', () => $('#goalTxModal').classList.remove('open'));
+  $('#goalTxSave').addEventListener('click', saveGoalTx);
+  $('#goalTxModal').addEventListener('click', (e) => { if (e.target === $('#goalTxModal')) $('#goalTxModal').classList.remove('open'); });
+  $$('#goalTxType .toggle-opt').forEach(b => b.addEventListener('click', () => {
+    _goalTxMode = b.dataset.gtx;
+    $$('#goalTxType .toggle-opt').forEach(x => x.classList.toggle('active', x.dataset.gtx === _goalTxMode));
+    updateGoalTxMode();
+  }));
+
+  // One-time items
+  $('#addOneTimeBtn').addEventListener('click', () => openOneTimeModal(null));
+  $('#oneTimeClose').addEventListener('click', () => $('#oneTimeModal').classList.remove('open'));
+  $('#oneTimeCancel').addEventListener('click', () => $('#oneTimeModal').classList.remove('open'));
+  $('#oneTimeSave').addEventListener('click', saveOneTime);
+  $('#oneTimeDelete').addEventListener('click', deleteOneTime);
+  $('#oneTimeModal').addEventListener('click', (e) => { if (e.target === $('#oneTimeModal')) $('#oneTimeModal').classList.remove('open'); });
   $('#catEditClose').addEventListener('click', closeCategoryEditor);
   $('#catEditCancel').addEventListener('click', closeCategoryEditor);
   $('#catEditSave').addEventListener('click', saveCategory);
@@ -3924,6 +4700,9 @@ function bindEvents() {
       else if ($('#catEditModal').classList.contains('open')) closeCategoryEditor();
       else if ($('#categoriesModal').classList.contains('open')) closeCategoriesModal();
       else if ($('#smsModal').classList.contains('open')) closeSmsModal();
+      else if ($('#goalEditModal').classList.contains('open')) $('#goalEditModal').classList.remove('open');
+      else if ($('#goalTxModal').classList.contains('open')) $('#goalTxModal').classList.remove('open');
+      else if ($('#oneTimeModal').classList.contains('open')) $('#oneTimeModal').classList.remove('open');
       else if ($('#settingsModal').classList.contains('open')) $('#settingsModal').classList.remove('open');
     }
     // Cmd/Ctrl + N for new entry
@@ -3952,7 +4731,11 @@ async function init() {
     render();
     renderCloudIndicator();
     // Pull latest from cloud (adopts remote if present)
-    setTimeout(() => doCloudPull({ verbose: false }), 300);
+    setTimeout(async () => {
+      await doCloudPull({ verbose: false });
+      await applyAutoContributions();
+      if (state.view === 'savings') renderSavings();
+    }, 300);
   } else {
     // Not signed in — show the auth screen
     applyTheme('light');
