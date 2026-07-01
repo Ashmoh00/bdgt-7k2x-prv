@@ -1225,7 +1225,7 @@
   <section class="view active" id="view-overview">
     <div class="hero">
       <div class="hero-primary">
-        <div class="hero-label">Total spent this month</div>
+        <div class="hero-label">Total spent this cycle</div>
         <span class="hero-amount amount" id="heroTotal">—</span>
         <div class="hero-rule"></div>
         <div class="hero-meta">
@@ -1271,6 +1271,47 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Real financial picture for this cycle: Income − Spent − Saved = Remaining -->
+    <div class="panel" style="margin-bottom: 24px;">
+      <div class="section-head">
+        <h2 class="section-title">This cycle</h2>
+        <div class="section-meta" id="cycleFlowMeta">income · spent · saved · left</div>
+      </div>
+      <div style="display:grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap:16px;">
+        <div style="border-left:3px solid var(--success); padding-left:12px;">
+          <div class="hero-meta-label">دخل</div>
+          <div class="amount" style="font-size:24px; color:var(--success);" id="flowIncome">—</div>
+        </div>
+        <div style="border-left:3px solid var(--danger); padding-left:12px;">
+          <div class="hero-meta-label">صرف</div>
+          <div class="amount" style="font-size:24px; color:var(--danger);" id="flowSpent">—</div>
+        </div>
+        <div style="border-left:3px solid var(--accent); padding-left:12px;">
+          <div class="hero-meta-label">ادخار</div>
+          <div class="amount" style="font-size:24px; color:var(--accent);" id="flowSaved">—</div>
+        </div>
+        <div style="border-left:3px solid var(--ink); padding-left:12px;">
+          <div class="hero-meta-label">الباقي</div>
+          <div class="amount" style="font-size:24px;" id="flowRemaining">—</div>
+        </div>
+      </div>
+      <div id="flowNote" style="font-size:11px; color:var(--ink-faint); margin-top:14px; line-height:1.5;"></div>
+    </div>
+
+    <!-- Monthly flow chart: spending vs saving vs remaining across cycles -->
+    <div class="panel" style="margin-bottom: 24px;">
+      <div class="section-head">
+        <h2 class="section-title">الصورة الشهرية</h2>
+        <div class="section-meta">صرف · ادخار · باقي</div>
+      </div>
+      <div style="display:flex; gap:16px; margin-bottom:12px; flex-wrap:wrap; font-size:11px;">
+        <span style="display:inline-flex; align-items:center; gap:6px;"><span style="width:10px; height:10px; border-radius:2px; background:var(--danger);"></span> صرف</span>
+        <span style="display:inline-flex; align-items:center; gap:6px;"><span style="width:10px; height:10px; border-radius:2px; background:var(--accent);"></span> ادخار</span>
+        <span style="display:inline-flex; align-items:center; gap:6px;"><span style="width:10px; height:10px; border-radius:2px; background:var(--success);"></span> باقي</span>
+      </div>
+      <svg class="daily-chart-svg" id="flowChart" viewBox="0 0 600 240" preserveAspectRatio="none" style="height:240px;"></svg>
     </div>
 
     <div class="duo">
@@ -1369,15 +1410,16 @@
       </div>
     </div>
 
-    <!-- One-time upcoming commitments -->
+    <!-- Needs / Wishlist -->
     <div class="panel" style="margin-bottom: 24px;">
       <div class="section-head">
-        <h2 class="section-title">One-time upcoming</h2>
-        <button class="btn btn-secondary" id="addOneTimeBtn" style="font-size:12px; padding:6px 12px;">+ Add item</button>
+        <h2 class="section-title">قائمة الاحتياجات</h2>
+        <button class="btn btn-secondary" id="addOneTimeBtn" style="font-size:12px; padding:6px 12px;">+ إضافة</button>
       </div>
       <div style="font-size:12px; color:var(--ink-muted); margin-bottom:14px; line-height:1.6;">
-        Expenses that happen once (a gift, a water filter). Add them here and they'll appear as a reminder in the cycle you choose — without repeating.
+        A planning list — add anything you remember you'll need (a gift, a water filter, new tires). Set an estimated budget and which cycle. This is just for planning and does <strong>not</strong> affect any of your totals or budgets. Check items off when done.
       </div>
+      <div id="oneTimeSummary" style="font-size:12px; color:var(--ink-muted); margin-bottom:12px;"></div>
       <div id="oneTimeList" style="display:flex; flex-direction:column; gap:8px;"></div>
     </div>
 
@@ -2599,11 +2641,94 @@ function renderOverview() {
   // Calendar heatmap
   renderCalendar(expenses, month);
 
+  // Financial flow summary + chart (income − spent − saved = remaining)
+  renderCycleFlow(totalIncome, totalSpent);
+  renderFlowChart();
+
   // Recent transactions (last 5)
   renderRecent(monthTxs.slice().sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 6));
 
   // Tab counters
   $('#logCount').textContent = monthTxs.length > 0 ? monthTxs.length : '';
+}
+
+// The real financial picture for the current cycle
+function renderCycleFlow(income, spent) {
+  const saved = savingsInCycle(currentCycleKey());
+  const remaining = income - spent - saved;
+
+  $('#flowIncome').innerHTML = income === 0 ? `<span class="currency-symbol">${currencySym()}</span>0` : fmtAmount(income);
+  $('#flowSpent').innerHTML = spent === 0 ? `<span class="currency-symbol">${currencySym()}</span>0` : fmtAmount(spent);
+  $('#flowSaved').innerHTML = saved === 0 ? `<span class="currency-symbol">${currencySym()}</span>0` : fmtAmount(saved);
+  $('#flowRemaining').innerHTML = fmtAmount(remaining);
+  $('#flowRemaining').style.color = remaining < 0 ? 'var(--danger)' : 'var(--ink)';
+
+  const note = $('#flowNote');
+  if (income === 0) {
+    note.innerHTML = 'سجّل دخلك (الراتب) كـ Income عشان يحسب الباقي الحقيقي. الباقي = الدخل − الصرف − الادخار.';
+  } else {
+    note.innerHTML = `الباقي = الدخل − الصرف − الادخار = ${fmtAmountMono(income)} − ${fmtAmountMono(spent)} − ${fmtAmountMono(saved)}`;
+  }
+}
+
+// Monthly flow chart: for each of the last N cycles, show spent / saved / remaining
+function renderFlowChart() {
+  const svg = $('#flowChart');
+  if (!svg) return;
+
+  // Build last 6 cycles ending at cursor
+  const cycles = [];
+  const end = new Date(state.cursorMonth.getFullYear(), state.cursorMonth.getMonth(), 1);
+  for (let i = 5; i >= 0; i--) {
+    const label = new Date(end.getFullYear(), end.getMonth() - i, 1);
+    const anchor = anchorFromLabelMonth(label);
+    const key = `${anchor.getFullYear()}-${String(anchor.getMonth()+1).padStart(2,'0')}`;
+    const nextAnchor = new Date(anchor); nextAnchor.setMonth(nextAnchor.getMonth() + 1);
+    const inRange = (d) => { const dt = new Date(d.getFullYear(), d.getMonth(), d.getDate()); return dt >= anchor && dt < nextAnchor; };
+    const txs = state.data.transactions.filter(t => inRange(new Date(t.date)));
+    const spent = txs.filter(t => t.type === 'expense').reduce((s,t) => s + t.amount, 0);
+    const income = txs.filter(t => t.type === 'income').reduce((s,t) => s + t.amount, 0);
+    const saved = savingsInCycle(key);
+    const remaining = income - spent - saved;
+    cycles.push({
+      label: label.toLocaleDateString(undefined, { month: 'short' }),
+      spent, saved, remaining: Math.max(0, remaining), income
+    });
+  }
+
+  const w = 600, h = 240, padL = 40, padR = 12, padTop = 12, padBottom = 34;
+  const innerW = w - padL - padR;
+  const innerH = h - padTop - padBottom;
+  const n = cycles.length;
+  const groupW = innerW / n;
+  const barGap = 4;
+  const barW = (groupW - barGap * 4) / 3;
+
+  const maxVal = Math.max(1, ...cycles.flatMap(c => [c.spent, c.saved, c.remaining]));
+
+  let html = '';
+  // Grid lines
+  for (let i = 1; i <= 3; i++) {
+    const y = padTop + innerH - (innerH * i / 4);
+    html += `<line x1="${padL}" y1="${y}" x2="${w - padR}" y2="${y}" stroke="var(--divider)" stroke-width="1" stroke-dasharray="2 3"/>`;
+    html += `<text x="${padL - 6}" y="${y + 3}" text-anchor="end" fill="var(--ink-faint)" font-size="9" font-family="var(--mono)">${Math.round(maxVal * i / 4)}</text>`;
+  }
+
+  const colors = { spent: 'var(--danger)', saved: 'var(--accent)', remaining: 'var(--success)' };
+  cycles.forEach((c, i) => {
+    const gx = padL + i * groupW + barGap;
+    const vals = [['spent', c.spent], ['saved', c.saved], ['remaining', c.remaining]];
+    vals.forEach(([key, val], j) => {
+      const bh = val > 0 ? Math.max(2, (val / maxVal) * innerH) : 0;
+      const x = gx + j * (barW + barGap);
+      const y = padTop + innerH - bh;
+      html += `<rect x="${x}" y="${y}" width="${barW}" height="${bh}" rx="1" fill="${colors[key]}" opacity="0.85"><title>${c.label} · ${key}: ${fmtAmountMono(val)}</title></rect>`;
+    });
+    // Month label
+    html += `<text x="${gx + (groupW - barGap*2)/2 - barGap}" y="${h - 12}" text-anchor="middle" fill="var(--ink-faint)" font-size="10" font-family="var(--sans)">${c.label}</text>`;
+  });
+
+  svg.innerHTML = html;
 }
 
 function renderDonut(expenses) {
@@ -3607,6 +3732,30 @@ function totalSaved() {
   return (state.data.savingsGoals || []).reduce((s, g) => s + goalBalance(g), 0);
 }
 
+// How much was contributed to savings (net) during a specific cycle key.
+// Counts add/withdraw entries whose date falls in that cycle. Reset doesn't
+// count as a contribution (it's spending the fund, handled separately).
+function savingsInCycle(cycleKey) {
+  const [y, m] = cycleKey.split('-').map(Number);
+  const anchor = new Date(y, m - 1, cycleStartDay());
+  const nextAnchor = new Date(anchor); nextAnchor.setMonth(nextAnchor.getMonth() + 1);
+  const inRange = (d) => {
+    const dt = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    return dt >= anchor && dt < nextAnchor;
+  };
+  let net = 0;
+  for (const g of (state.data.savingsGoals || [])) {
+    for (const h of (g.history || [])) {
+      if (!h.date) continue;
+      if (!inRange(new Date(h.date))) continue;
+      if (h.type === 'add') net += h.amount;
+      else if (h.type === 'withdraw') net -= h.amount;
+      // reset: ignore for contribution accounting
+    }
+  }
+  return net;
+}
+
 // Auto-add monthly contributions for the current cycle if not already added
 async function applyAutoContributions() {
   const key = currentCycleKey();
@@ -3923,33 +4072,13 @@ async function deleteOneTime() {
   showToast('Item removed');
 }
 
-// Convert a one-time item into an actual transaction ("mark as paid / add")
-async function addOneTimeAsTransaction(itemId) {
+// Toggle an item's done state (it's just a planning list — no effect on accounts)
+async function toggleOneTimeDone(itemId) {
   const it = state.data.oneTimeItems.find(x => x.id === itemId);
   if (!it) return;
-  // Add a transaction dated in the target cycle (use its anchor + a few days, or today if current)
-  const anchor = (() => {
-    const [y, m] = it.forCycleKey.split('-').map(Number);
-    return new Date(y, m - 1, cycleStartDay());
-  })();
-  const today = new Date();
-  const txDate = cycleKeyFor(today) === it.forCycleKey ? today.toISOString().slice(0,10) : anchor.toISOString().slice(0,10);
-  state.data.transactions.push({
-    id: uid(),
-    amount: it.amount,
-    description: it.name,
-    date: txDate,
-    note: 'One-time',
-    category: it.category,
-    type: 'expense',
-    createdAt: Date.now()
-  });
-  // Mark done + remove from pending
-  state.data.oneTimeItems = state.data.oneTimeItems.filter(x => x.id !== itemId);
+  it.done = !it.done;
   await saveData();
-  renderPlan();
-  render();
-  showToast('Added as an expense');
+  renderOneTimeList();
 }
 
 function cycleLabelFromKey(key) {
@@ -3960,30 +4089,45 @@ function cycleLabelFromKey(key) {
 }
 
 function renderOneTimeList() {
-  const items = (state.data.oneTimeItems || []).slice().sort((a, b) => a.forCycleKey.localeCompare(b.forCycleKey));
+  const items = (state.data.oneTimeItems || []).slice().sort((a, b) => {
+    // Not-done first, then by cycle
+    if (!!a.done !== !!b.done) return a.done ? 1 : -1;
+    return a.forCycleKey.localeCompare(b.forCycleKey);
+  });
   const list = $('#oneTimeList');
+  const summary = $('#oneTimeSummary');
   if (!list) return;
+
+  // Summary: total estimated for pending items
+  const pending = items.filter(i => !i.done);
+  const pendingTotal = pending.reduce((s, i) => s + (i.amount || 0), 0);
+  if (summary) {
+    summary.innerHTML = items.length === 0 ? '' :
+      `Planned total: <strong style="color:var(--ink);">${fmtAmountMono(pendingTotal)}</strong> across ${pending.length} item${pending.length === 1 ? '' : 's'}`;
+  }
+
   if (items.length === 0) {
-    list.innerHTML = `<div style="font-size:13px; color:var(--ink-faint); padding:8px 0;">No upcoming one-time items. Tap "Add item" to plan one.</div>`;
+    list.innerHTML = `<div style="font-size:13px; color:var(--ink-faint); padding:8px 0;">Your needs list is empty. Tap "إضافة" to add something you'll need.</div>`;
     return;
   }
   list.innerHTML = items.map(it => {
     const cat = getCat(it.category);
+    const done = !!it.done;
     return `
-      <div style="display:flex; align-items:center; gap:12px; padding:12px; background:var(--bg-subtle); border-radius:var(--radius);" data-ot="${it.id}">
-        <div style="width:34px; height:34px; border-radius:8px; background:${cat.color}22; color:${cat.color}; display:grid; place-items:center; font-size:16px; flex-shrink:0;">${cat.emoji}</div>
+      <div style="display:flex; align-items:center; gap:10px; padding:12px; background:var(--bg-subtle); border-radius:var(--radius); ${done ? 'opacity:0.55;' : ''}" data-ot="${it.id}">
+        <button class="ot-check" data-ot="${it.id}" aria-label="Toggle done" style="width:24px; height:24px; border-radius:6px; border:2px solid ${done ? cat.color : 'var(--divider-strong)'}; background:${done ? cat.color : 'transparent'}; display:grid; place-items:center; flex-shrink:0; cursor:pointer;">
+          ${done ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>' : ''}
+        </button>
+        <div style="width:32px; height:32px; border-radius:8px; background:${cat.color}22; color:${cat.color}; display:grid; place-items:center; font-size:15px; flex-shrink:0;">${cat.emoji}</div>
         <div style="flex:1; min-width:0;">
-          <div style="font-weight:500; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(it.name)}</div>
+          <div style="font-weight:500; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; ${done ? 'text-decoration:line-through;' : ''}">${escapeHtml(it.name)}</div>
           <div style="font-size:11px; color:var(--ink-muted);">${cycleLabelFromKey(it.forCycleKey)}</div>
         </div>
-        <div class="amount" style="font-size:17px;">${fmtAmount(it.amount)}</div>
-        <div style="display:flex; gap:4px;">
-          <button class="ot-add btn btn-primary" data-ot="${it.id}" style="font-size:11px; padding:5px 10px;" title="Add as expense">Add</button>
-          <button class="ot-edit tx-action" data-ot="${it.id}" aria-label="Edit"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></button>
-        </div>
+        <div class="amount" style="font-size:16px;">${fmtAmount(it.amount)}</div>
+        <button class="ot-edit tx-action" data-ot="${it.id}" aria-label="Edit"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></button>
       </div>`;
   }).join('');
-  list.querySelectorAll('.ot-add').forEach(b => b.addEventListener('click', (e) => { e.stopPropagation(); addOneTimeAsTransaction(b.dataset.ot); }));
+  list.querySelectorAll('.ot-check').forEach(b => b.addEventListener('click', (e) => { e.stopPropagation(); toggleOneTimeDone(b.dataset.ot); }));
   list.querySelectorAll('.ot-edit').forEach(b => b.addEventListener('click', (e) => { e.stopPropagation(); openOneTimeModal(b.dataset.ot); }));
 }
 
