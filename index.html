@@ -400,6 +400,8 @@
     align-items: baseline;
     justify-content: space-between;
     margin-bottom: 16px;
+    gap: 10px;
+    flex-wrap: wrap;
   }
   .section-title {
     font-family: var(--serif);
@@ -410,6 +412,9 @@
     color: var(--ink);
   }
   .section-meta { font-size: 11px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.16em; font-weight: 600; }
+  @media (max-width: 480px) {
+    .section-meta { letter-spacing: 0.1em; font-size: 10px; }
+  }
 
   /* ============================ DUO CARDS ============================ */
   .duo {
@@ -426,6 +431,32 @@
     padding: 24px;
     min-width: 0;
     overflow: hidden;
+  }
+
+  /* This-cycle financial flow grid */
+  .flow-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+  }
+  .flow-cell {
+    border-left: 3px solid var(--ink);
+    padding-left: 12px;
+    min-width: 0;
+  }
+  .flow-amount {
+    font-size: 24px;
+    line-height: 1.15;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  @media (max-width: 700px) {
+    .flow-grid { grid-template-columns: 1fr 1fr; gap: 14px 16px; }
+    .flow-amount { font-size: 22px; }
+  }
+  @media (max-width: 400px) {
+    .flow-amount { font-size: 19px; }
   }
 
   /* Donut */
@@ -1279,22 +1310,22 @@
         <h2 class="section-title">This cycle</h2>
         <div class="section-meta" id="cycleFlowMeta">income · spent · saved · left</div>
       </div>
-      <div style="display:grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap:16px;">
-        <div style="border-left:3px solid var(--success); padding-left:12px;">
+      <div class="flow-grid">
+        <div class="flow-cell" style="border-left-color:var(--success);">
           <div class="hero-meta-label">دخل</div>
-          <div class="amount" style="font-size:24px; color:var(--success);" id="flowIncome">—</div>
+          <div class="amount flow-amount" style="color:var(--success);" id="flowIncome">—</div>
         </div>
-        <div style="border-left:3px solid var(--danger); padding-left:12px;">
+        <div class="flow-cell" style="border-left-color:var(--danger);">
           <div class="hero-meta-label">صرف</div>
-          <div class="amount" style="font-size:24px; color:var(--danger);" id="flowSpent">—</div>
+          <div class="amount flow-amount" style="color:var(--danger);" id="flowSpent">—</div>
         </div>
-        <div style="border-left:3px solid var(--accent); padding-left:12px;">
+        <div class="flow-cell" style="border-left-color:var(--accent);">
           <div class="hero-meta-label">ادخار</div>
-          <div class="amount" style="font-size:24px; color:var(--accent);" id="flowSaved">—</div>
+          <div class="amount flow-amount" style="color:var(--accent);" id="flowSaved">—</div>
         </div>
-        <div style="border-left:3px solid var(--ink); padding-left:12px;">
+        <div class="flow-cell" style="border-left-color:var(--ink);">
           <div class="hero-meta-label">الباقي</div>
-          <div class="amount" style="font-size:24px;" id="flowRemaining">—</div>
+          <div class="amount flow-amount" id="flowRemaining">—</div>
         </div>
       </div>
       <div id="flowNote" style="font-size:11px; color:var(--ink-faint); margin-top:14px; line-height:1.5;"></div>
@@ -2670,10 +2701,16 @@ function renderCycleFlow(income, spent) {
   const saved = savingsInCycle(currentCycleKey());
   const remaining = income - spent - saved;
 
-  $('#flowIncome').innerHTML = income === 0 ? `<span class="currency-symbol">${currencySym()}</span>0` : fmtAmount(income);
-  $('#flowSpent').innerHTML = spent === 0 ? `<span class="currency-symbol">${currencySym()}</span>0` : fmtAmount(spent);
-  $('#flowSaved').innerHTML = saved === 0 ? `<span class="currency-symbol">${currencySym()}</span>0` : fmtAmount(saved);
-  $('#flowRemaining').innerHTML = fmtAmount(remaining);
+  // Whole-number formatting for these summary figures (avoids clipping on mobile)
+  const fmtWhole = (n) => {
+    const neg = n < 0;
+    const v = Math.round(Math.abs(n)).toLocaleString();
+    return `${neg ? '−' : ''}<span class="currency-symbol">${currencySym()}</span>${v}`;
+  };
+  $('#flowIncome').innerHTML = fmtWhole(income);
+  $('#flowSpent').innerHTML = fmtWhole(spent);
+  $('#flowSaved').innerHTML = fmtWhole(saved);
+  $('#flowRemaining').innerHTML = fmtWhole(remaining);
   $('#flowRemaining').style.color = remaining < 0 ? 'var(--danger)' : 'var(--ink)';
 
   const note = $('#flowNote');
